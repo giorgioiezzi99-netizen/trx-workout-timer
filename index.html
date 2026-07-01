@@ -1396,6 +1396,12 @@
         type: "radio",
         title: "Italian radio",
         detail: "20 saved stations. Use Next or Previous Radio to change station."
+      },
+      {
+        id: "none",
+        type: "none",
+        title: "No music",
+        detail: "Timer only. Voice cues and beeps still work."
       }
     ];
     const RADIO_STATIONS = [
@@ -1553,7 +1559,7 @@
       try {
         const saved = localStorage.getItem(MUSIC_STORAGE_KEY);
         if (!saved) return fallback;
-        if (saved === "none") return fallback;
+        if (saved === "none") return { ...fallback, mode: "none" };
         const legacyRadio = {
           "radio-subasio": 0,
           "radio-italia-anni-60": 1
@@ -1567,8 +1573,9 @@
         if (saved.startsWith("yt-")) return fallback;
         const parsed = JSON.parse(saved);
         if (parsed && typeof parsed === "object") {
+          const savedMode = parsed.mode === "none" ? "none" : "radio";
           return {
-            mode: "radio",
+            mode: savedMode,
             radioIndex: clampInt(parsed.radioIndex, 0, RADIO_STATIONS.length - 1, 0),
             musicVolume: clampInt(parsed.musicVolume, 0, 100, fallback.musicVolume),
             cueVolume: clampInt(parsed.cueVolume, 0, 100, fallback.cueVolume)
@@ -1607,6 +1614,7 @@
     }
 
     function duckMusic(duration = 1800) {
+      if (musicState.mode === "none") return;
       const baseVolume = clampInt(musicState.musicVolume, 0, 100, 80);
       if (baseVolume <= 8) return;
       window.clearTimeout(duckRestoreTimer);
@@ -1701,7 +1709,9 @@
       persistMusicState();
       prepareMusicPlayer();
       const source = getCurrentMusicSource();
-      els.musicStatus.textContent = `${mode.title} selected: ${source.title}. Press Start Workout to begin.`;
+      els.musicStatus.textContent = mode.id === "radio"
+        ? `${mode.title} selected: ${source.title}. Press Start Workout to begin.`
+        : "No music selected. Press Start Workout to begin timer only.";
       renderMusic();
     }
 
@@ -1712,6 +1722,9 @@
 
       if (mode.id === "radio") {
         playRadioStream(source);
+      } else {
+        stopMusic(false);
+        els.musicStatus.textContent = "Workout started without music.";
       }
     }
 
@@ -1721,6 +1734,7 @@
       pendingRadioPlay = false;
       if (mode.id === "radio") els.radioPlayer.pause();
       if (mode.id === "radio" && source) els.musicStatus.textContent = `${source.title} paused.`;
+      if (mode.id === "none") els.musicStatus.textContent = "No music selected.";
     }
 
     function stopMusic(updateStatus = true) {
@@ -1734,9 +1748,11 @@
         } catch (error) {
           // Live streams do not always expose a seekable timeline.
         }
+      } else {
+        els.radioPlayer.pause();
       }
       if (updateStatus) {
-        els.musicStatus.textContent = `${source.title} stopped.`;
+        els.musicStatus.textContent = mode.id === "radio" ? `${source.title} stopped.` : "No music selected.";
       }
     }
 
@@ -1750,7 +1766,7 @@
       prepareMusicPlayer();
       renderMusic();
       const source = getCurrentMusicSource();
-      els.musicStatus.textContent = `${source.title} selected.`;
+      els.musicStatus.textContent = mode.id === "radio" ? `${source.title} selected.` : "Select Italian radio to change stations.";
       if (player.running) startSelectedMusic();
     }
 
@@ -2173,15 +2189,20 @@
     function renderMusic() {
       const mode = getSelectedMusicMode();
       const source = getCurrentMusicSource();
-      els.musicSummary.textContent = `${mode.title}: ${source.title}`;
-      els.musicStartLabel.textContent = player.running ? "Resume Music" : "Start Workout";
+      const isRadio = mode.id === "radio";
+      els.musicSummary.textContent = isRadio ? `${mode.title}: ${source.title}` : "No music";
+      els.musicStartLabel.textContent = isRadio
+        ? (player.running ? "Resume Music" : "Start Workout")
+        : (player.running ? "Timer Running" : "Start Workout");
+      els.musicStartBtn.disabled = !isRadio && player.running;
       els.musicPrevLabel.textContent = "Previous Radio";
       els.musicSkipLabel.textContent = "Next Radio";
-      els.musicPrevBtn.disabled = false;
-      els.musicSkipBtn.disabled = false;
-      els.musicStopBtn.disabled = false;
-      els.currentMusicSource.hidden = false;
-      if (source) {
+      els.musicPrevBtn.disabled = !isRadio;
+      els.musicSkipBtn.disabled = !isRadio;
+      els.musicStopBtn.disabled = !isRadio;
+      els.musicVolumeInput.disabled = !isRadio;
+      els.currentMusicSource.hidden = !isRadio;
+      if (isRadio && source) {
         els.musicSourceTitle.textContent = source.title;
         els.musicSourceDetail.textContent = source.detail;
       }

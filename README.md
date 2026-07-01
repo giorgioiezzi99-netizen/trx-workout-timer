@@ -41,7 +41,7 @@ Total math:
 - Modify button reopens the editor; Hide closes it again.
 - Skip control was removed per the latest browser comment.
 - My Timers is collapsed by default and appears above the timer so saved timers are easy to reach without taking over the phone layout.
-- Music is collapsed by default and uses Italian radio only.
+- Music is collapsed by default and offers No music or Italian radio.
 - Italian radio includes 20 mainstream Italian stations with Previous Radio and Next Radio controls.
 - Starting the workout starts the selected radio stream; pausing/resetting the timer pauses/stops radio.
 - Music volume and Cue volume have large visible sliders.
@@ -50,6 +50,7 @@ Total math:
 
 ## Music Sources
 
+- No music mode: starts the timer without loading any audio stream. Voice cues and beeps still work.
 - Italian Radio mode: 20 mainstream stations, using direct audio or HLS streams verified to respond as browser-playable media.
   - RTL 102.5, Radio Italia, RDS, Radio Deejay, Radio 105, Radio Kiss Kiss
   - Rai Radio 1, Virgin Radio, Radio 24, Rai Radio 2, R101, Radio Monte Carlo
