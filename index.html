@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en">
+<html lang="it">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>TRX Workout Timer</title>
+  <title>Timer Allenamento TRX</title>
   <link rel="icon" href="assets/trx-timer-logo.png" type="image/png">
   <style>
     :root {
@@ -1103,23 +1103,23 @@
           <img src="assets/trx-timer-logo.png" alt="">
         </div>
         <div>
-          <h1>TRX Workout Timer</h1>
-          <p>Saved interval timers for training sessions</p>
+          <h1>Timer Allenamento TRX</h1>
+          <p>Timer a intervalli salvati per gli allenamenti</p>
         </div>
       </div>
-      <div class="summary" aria-label="Workout summary">
-        <div class="summary-pill"><span>Sets</span> <strong id="summarySets">10</strong></div>
-        <div class="summary-pill"><span>Reps</span> <strong id="summaryReps">6</strong></div>
-        <div class="summary-pill"><span>Total</span> <strong id="summaryTotal">34:35</strong></div>
+      <div class="summary" aria-label="Riepilogo allenamento">
+        <div class="summary-pill"><span>Serie</span> <strong id="summarySets">10</strong></div>
+        <div class="summary-pill"><span>Rip.</span> <strong id="summaryReps">6</strong></div>
+        <div class="summary-pill"><span>Totale</span> <strong id="summaryTotal">34:35</strong></div>
       </div>
     </header>
 
     <div class="shell editor-collapsed" id="appShell">
-      <section class="panel timer-panel" aria-label="Workout timer">
+      <section class="panel timer-panel" aria-label="Timer allenamento">
         <div class="timer-header">
           <div class="workout-title">
-            <h2 id="activeName">TRX workout</h2>
-            <p id="activeStructure">10 sets x 6 reps</p>
+            <h2 id="activeName">Allenamento TRX</h2>
+            <p id="activeStructure">10 serie x 6 rip.</p>
           </div>
           <div class="timer-actions">
             <button class="button button-secondary button-compact" id="modifyBtn" type="button" aria-expanded="false" aria-controls="editorPanel">
@@ -1127,14 +1127,14 @@
                 <path d="M12 20h9"></path>
                 <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
               </svg>
-              <span id="modifyBtnLabel">Modify</span>
+              <span id="modifyBtnLabel">Modifica</span>
             </button>
             <div class="phase-chip" id="phaseChip">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <circle cx="12" cy="12" r="9"></circle>
                 <path d="M12 7v5l3 2"></path>
               </svg>
-              Ready
+              Pronto
             </div>
           </div>
         </div>
@@ -1142,16 +1142,16 @@
         <div class="timer-body">
           <div class="phase-grid">
             <div class="metric">
-              <span>Set</span>
-              <strong id="setMetric">1 of 10</strong>
+              <span>Serie</span>
+              <strong id="setMetric">1 di 10</strong>
             </div>
             <div class="metric">
-              <span>Rep</span>
-              <strong id="repMetric">1 of 6</strong>
+              <span>Rip.</span>
+              <strong id="repMetric">1 di 6</strong>
             </div>
             <div class="metric">
-              <span>Phase</span>
-              <strong id="phaseMetric">Work</strong>
+              <span>Fase</span>
+              <strong id="phaseMetric">Esercizio</strong>
             </div>
           </div>
 
@@ -1159,8 +1159,8 @@
             <div class="dial" role="timer" aria-live="polite" aria-atomic="true">
               <div class="dial-content">
                 <div class="countdown" id="countdown">24</div>
-                <div class="phase-name" id="phaseName">Work</div>
-                <div class="phase-context" id="phaseContext">Set 1 of 10, rep 1 of 6</div>
+                <div class="phase-name" id="phaseName">Esercizio</div>
+                <div class="phase-context" id="phaseContext">Serie 1 di 10, ripetizione 1 di 6</div>
               </div>
             </div>
           </div>
@@ -1174,34 +1174,34 @@
                 <path d="M7 5h4v14H7z"></path>
                 <path d="M13 5h4v14h-4z"></path>
               </svg>
-              <span id="startPauseLabel">Start</span>
+              <span id="startPauseLabel">Avvia</span>
             </button>
             <button class="button button-secondary" id="resetBtn" type="button">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M3 12a9 9 0 1 0 3-6.7"></path>
                 <path d="M3 4v6h6"></path>
               </svg>
-              Reset
+              Azzera
             </button>
           </div>
 
           <div class="progress-area">
-            <div class="total-bar" aria-label="Workout progress"><span></span></div>
-            <div class="set-segments" id="setSegments" aria-label="Set progress"></div>
+            <div class="total-bar" aria-label="Avanzamento allenamento"><span></span></div>
+            <div class="set-segments" id="setSegments" aria-label="Avanzamento serie"></div>
             <div class="next-row">
-              <span>Next: <strong id="nextPhase">Rest between reps, 10 sec</strong></span>
-              <span id="elapsedTime">0:00 elapsed</span>
+              <span>Prossimo: <strong id="nextPhase">Recupero tra ripetizioni, 10 sec</strong></span>
+              <span id="elapsedTime">0:00 trascorsi</span>
             </div>
           </div>
         </div>
       </section>
 
-      <section class="panel utility-panel music-panel" aria-label="Workout music">
+      <section class="panel utility-panel music-panel" aria-label="Musica allenamento">
         <details class="panel-disclosure" id="musicDrawer">
           <summary>
             <div class="disclosure-copy">
-              <h2 class="panel-title">Music</h2>
-              <span id="musicSummary">Italian radio</span>
+              <h2 class="panel-title">Musica</h2>
+              <span id="musicSummary">Radio italiane</span>
             </div>
             <svg class="disclosure-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="m6 9 6 6 6-6"></path>
@@ -1210,23 +1210,23 @@
           <div class="disclosure-body">
             <div class="music-options" id="musicOptions"></div>
             <div class="current-source" id="currentMusicSource" hidden>
-              <span>Current source</span>
+              <span>Sorgente attuale</span>
               <strong id="musicSourceTitle">RTL 102.5</strong>
-              <small id="musicSourceDetail">Audiradio top national network</small>
+              <small id="musicSourceDetail">Rete nazionale tra le più ascoltate</small>
             </div>
             <div class="music-controls">
               <button class="button button-primary" id="musicStartBtn" type="button">
                 <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                   <path d="M8 5.5v13l10-6.5-10-6.5Z"></path>
                 </svg>
-                <span id="musicStartLabel">Start Workout</span>
+                <span id="musicStartLabel">Avvia allenamento</span>
               </button>
               <button class="button button-secondary" id="musicPrevBtn" type="button">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                   <path d="m7 7-5 5 5 5"></path>
                   <path d="M2 12h20"></path>
                 </svg>
-                <span id="musicPrevLabel">Previous Radio</span>
+                <span id="musicPrevLabel">Radio precedente</span>
               </button>
               <button class="button button-secondary" id="musicSkipBtn" type="button">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -1235,26 +1235,26 @@
                   <path d="m7 23-4-4 4-4"></path>
                   <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
                 </svg>
-                <span id="musicSkipLabel">Next Radio</span>
+                <span id="musicSkipLabel">Radio successiva</span>
               </button>
               <button class="button button-secondary" id="musicStopBtn" type="button">
                 <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                   <path d="M7 7h10v10H7z"></path>
                 </svg>
-                Stop Music
+                Ferma musica
               </button>
             </div>
-            <div class="volume-panel" aria-label="Audio volume controls">
+            <div class="volume-panel" aria-label="Controlli volume audio">
               <div class="volume-control">
                 <label for="musicVolumeInput">
-                  <span>Music volume</span>
+                  <span>Volume musica</span>
                   <output id="musicVolumeValue" for="musicVolumeInput">80%</output>
                 </label>
                 <input id="musicVolumeInput" type="range" min="0" max="100" step="1" value="80">
               </div>
               <div class="volume-control">
                 <label for="cueVolumeInput">
-                  <span>Cue volume</span>
+                  <span>Volume avvisi</span>
                   <output id="cueVolumeValue" for="cueVolumeInput">100%</output>
                 </label>
                 <input id="cueVolumeInput" type="range" min="0" max="100" step="1" value="100">
@@ -1263,17 +1263,17 @@
             <div class="music-player" id="musicPlayerArea" hidden>
               <audio id="radioPlayer" controls preload="none" hidden></audio>
             </div>
-            <div class="status-line" id="musicStatus" aria-live="polite">Italian radio ready.</div>
+            <div class="status-line" id="musicStatus" aria-live="polite">Radio italiane pronte.</div>
           </div>
         </details>
       </section>
 
-      <aside class="panel presets utility-panel" aria-label="My timers">
+      <aside class="panel presets utility-panel" aria-label="I miei timer">
         <details class="panel-disclosure" id="presetsDrawer">
           <summary>
             <div class="disclosure-copy">
-              <h2 class="panel-title">My Timers</h2>
-              <span id="presetSummary">TRX workout</span>
+              <h2 class="panel-title">I miei timer</h2>
+              <span id="presetSummary">Allenamento TRX</span>
             </div>
             <svg class="disclosure-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="m6 9 6 6 6-6"></path>
@@ -1286,14 +1286,14 @@
                   <path d="M12 5v14"></path>
                   <path d="M5 12h14"></path>
                 </svg>
-                New
+                Nuovo
               </button>
               <button class="button button-secondary button-compact" id="duplicateBtn" type="button">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                   <rect x="8" y="8" width="11" height="11" rx="2"></rect>
                   <path d="M5 16V7a2 2 0 0 1 2-2h9"></path>
                 </svg>
-                Copy
+                Copia
               </button>
               <button class="button button-secondary button-compact" id="saveBtnTop" type="button">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -1301,7 +1301,7 @@
                   <path d="M17 21v-8H7v8"></path>
                   <path d="M7 3v5h8"></path>
                 </svg>
-                Save
+                Salva
               </button>
               <button class="button button-danger button-compact" id="deleteBtn" type="button">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -1311,7 +1311,7 @@
                   <path d="M10 11v5"></path>
                   <path d="M14 11v5"></path>
                 </svg>
-                Delete
+                Elimina
               </button>
             </div>
             <div class="preset-list" id="presetList"></div>
@@ -1319,34 +1319,34 @@
         </details>
       </aside>
 
-      <aside class="panel editor" id="editorPanel" aria-label="Timer editor" hidden>
+      <aside class="panel editor" id="editorPanel" aria-label="Editor timer" hidden>
         <div class="panel-header">
-          <h2 class="panel-title">Timer Details</h2>
+          <h2 class="panel-title">Dettagli timer</h2>
         </div>
         <form id="editorForm">
           <div class="field">
-            <label for="timerName">Timer name</label>
-            <input id="timerName" name="name" type="text" autocomplete="off" maxlength="48" value="TRX workout">
+            <label for="timerName">Nome timer</label>
+            <input id="timerName" name="name" type="text" autocomplete="off" maxlength="48" value="Allenamento TRX">
           </div>
           <div class="field-grid">
             <div class="field">
-              <label for="setsInput">Sets</label>
+              <label for="setsInput">Serie</label>
               <input id="setsInput" name="sets" type="number" min="1" max="50" step="1" value="10">
             </div>
             <div class="field">
-              <label for="repsInput">Reps per set</label>
+              <label for="repsInput">Ripetizioni per serie</label>
               <input id="repsInput" name="reps" type="number" min="1" max="50" step="1" value="6">
             </div>
             <div class="field">
-              <label for="workInput">Rep seconds</label>
+              <label for="workInput">Secondi ripetizione</label>
               <input id="workInput" name="work" type="number" min="1" max="3600" step="1" value="24">
             </div>
             <div class="field">
-              <label for="restInput">Rep rest seconds</label>
+              <label for="restInput">Recupero tra ripetizioni</label>
               <input id="restInput" name="rest" type="number" min="0" max="3600" step="1" value="10">
             </div>
             <div class="field">
-              <label for="setRestInput">Set rest seconds</label>
+              <label for="setRestInput">Recupero tra serie</label>
               <input id="setRestInput" name="setRest" type="number" min="0" max="3600" step="1" value="15">
             </div>
           </div>
@@ -1357,21 +1357,21 @@
                 <path d="M17 21v-8H7v8"></path>
                 <path d="M7 3v5h8"></path>
               </svg>
-              Save
+              Salva
             </button>
             <button class="button button-secondary" id="revertBtn" type="button">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M9 14 4 9l5-5"></path>
                 <path d="M4 9h10a6 6 0 0 1 0 12h-3"></path>
               </svg>
-              Revert
+              Annulla
             </button>
           </div>
           <div class="switch">
-            <label for="soundToggle">Voice and sound cues</label>
+            <label for="soundToggle">Voce e segnali sonori</label>
             <input id="soundToggle" type="checkbox" checked>
           </div>
-          <div class="status-line" id="saveStatus" aria-live="polite">Saved</div>
+          <div class="status-line" id="saveStatus" aria-live="polite">Salvato</div>
         </form>
       </aside>
     </div>
@@ -1383,7 +1383,7 @@
     const MUSIC_STORAGE_KEY = "trx-tabata-music-v1";
     const DEFAULT_TIMER = {
       id: "trx-workout-default",
-      name: "TRX workout",
+      name: "Allenamento TRX",
       sets: 10,
       reps: 6,
       work: 24,
@@ -1394,37 +1394,37 @@
       {
         id: "radio",
         type: "radio",
-        title: "Italian radio",
-        detail: "20 saved stations. Use Next or Previous Radio to change station."
+        title: "Radio italiane",
+        detail: "20 stazioni salvate. Usa Radio precedente o Radio successiva per cambiare stazione."
       },
       {
         id: "none",
         type: "none",
-        title: "No music",
-        detail: "Timer only. Voice cues and beeps still work."
+        title: "Senza musica",
+        detail: "Solo timer. Voce e segnali sonori restano attivi."
       }
     ];
     const RADIO_STATIONS = [
-      { title: "RTL 102.5", detail: "Audiradio top national network", streamType: "hls", streamUrl: "https://dd782ed59e2a4e86aabf6fc508674b59.msvdn.net/live/S97044836/tbbP8T1ZRPBL/playlist_audio.m3u8" },
+      { title: "RTL 102.5", detail: "Rete nazionale tra le più ascoltate", streamType: "hls", streamUrl: "https://dd782ed59e2a4e86aabf6fc508674b59.msvdn.net/live/S97044836/tbbP8T1ZRPBL/playlist_audio.m3u8" },
       { title: "Radio Italia", detail: "Solo musica italiana", streamType: "hls", streamUrl: "https://radioitaliasmi.akamaized.net/hls/live/2093120/RISMI/stream01/streamPlaylist.m3u8" },
       { title: "RDS", detail: "100% Grandi Successi", streamType: "hls", streamUrl: "https://stream.rds.radio/audio/rds.stream_aac/chunklist.m3u8" },
-      { title: "Radio Deejay", detail: "National music and entertainment", streamType: "hls", streamUrl: "https://4c4b867c89244861ac216426883d1ad0.msvdn.net/radiodeejay/radiodeejay/master_ma.m3u8" },
-      { title: "Radio 105", detail: "National music radio", streamType: "audio", streamUrl: "https://icecast.unitedradio.it/Radio105.mp3" },
-      { title: "Radio Kiss Kiss", detail: "National music radio", streamType: "audio", streamUrl: "https://kisskiss.fluidstream.eu/KissKiss.mp3" },
-      { title: "Rai Radio 1", detail: "Rai national radio", streamType: "audio", streamUrl: "https://icecdn-19d24861e90342cc8decb03c24c8a419.msvdn.net/icecastRelay/S18493106/rCMKqdMFKPBB/icecast" },
-      { title: "Virgin Radio", detail: "Rock music", streamType: "audio", streamUrl: "https://icecast.unitedradio.it/Virgin.mp3" },
+      { title: "Radio Deejay", detail: "Musica e intrattenimento nazionale", streamType: "hls", streamUrl: "https://4c4b867c89244861ac216426883d1ad0.msvdn.net/radiodeejay/radiodeejay/master_ma.m3u8" },
+      { title: "Radio 105", detail: "Radio musicale nazionale", streamType: "audio", streamUrl: "https://icecast.unitedradio.it/Radio105.mp3" },
+      { title: "Radio Kiss Kiss", detail: "Radio musicale nazionale", streamType: "audio", streamUrl: "https://kisskiss.fluidstream.eu/KissKiss.mp3" },
+      { title: "Rai Radio 1", detail: "Radio nazionale Rai", streamType: "audio", streamUrl: "https://icecdn-19d24861e90342cc8decb03c24c8a419.msvdn.net/icecastRelay/S18493106/rCMKqdMFKPBB/icecast" },
+      { title: "Virgin Radio", detail: "Musica rock", streamType: "audio", streamUrl: "https://icecast.unitedradio.it/Virgin.mp3" },
       { title: "Radio 24", detail: "Il Sole 24 Ore", streamType: "audio", streamUrl: "http://shoutcast2.radio24.it:8000/;" },
-      { title: "Rai Radio 2", detail: "Rai music and entertainment", streamType: "audio", streamUrl: "https://icecdn-19d24861e90342cc8decb03c24c8a419.msvdn.net/icecastRelay/S35942484/yp5F67151K92/icecast" },
-      { title: "R101", detail: "Enjoy the music", streamType: "audio", streamUrl: "https://icecast.unitedradio.it/r101_mp3" },
-      { title: "Radio Monte Carlo", detail: "Music and style", streamType: "audio", streamUrl: "https://icecast.unitedradio.it/RMC.mp3" },
-      { title: "Radio Capital", detail: "Classic and contemporary hits", streamType: "hls", streamUrl: "https://4c4b867c89244861ac216426883d1ad0.msvdn.net/radiocapital/radiocapital/master_ma.m3u8" },
-      { title: "m2o", detail: "Dance and electronic", streamType: "hls", streamUrl: "https://4c4b867c89244861ac216426883d1ad0.msvdn.net/radiom2o/radiom2o/master_ma.m3u8" },
-      { title: "Radiofreccia", detail: "Rock station from RTL group", streamType: "hls", streamUrl: "https://dd782ed59e2a4e86aabf6fc508674b59.msvdn.net/live/S3160845/0tuSetc8UFkF/playlist_audio.m3u8" },
-      { title: "Radio Zeta", detail: "RTL group music station", streamType: "audio", streamUrl: "https://streamingv2.shoutcast.com/radio-zeta" },
-      { title: "Radio Bruno", detail: "Major Italian local network", streamType: "audio", streamUrl: "https://router.xdevel.com/audio4s975355-254/stream/icecast.audio" },
-      { title: "Radio Subasio", detail: "Italian music radio", streamType: "audio", streamUrl: "https://icy.unitedradio.it/Subasio.mp3" },
-      { title: "Radio Norba", detail: "Southern Italian network", streamType: "audio", streamUrl: "https://ad2.xdevel.com/radionorba" },
-      { title: "Radio Parsifal", detail: "Italian music station", streamType: "audio", streamUrl: "https://stream5.xdevel.com/audio0s976542-1302/stream/icecast.audio" }
+      { title: "Rai Radio 2", detail: "Musica e intrattenimento Rai", streamType: "audio", streamUrl: "https://icecdn-19d24861e90342cc8decb03c24c8a419.msvdn.net/icecastRelay/S35942484/yp5F67151K92/icecast" },
+      { title: "R101", detail: "Musica e grandi successi", streamType: "audio", streamUrl: "https://icecast.unitedradio.it/r101_mp3" },
+      { title: "Radio Monte Carlo", detail: "Musica e stile", streamType: "audio", streamUrl: "https://icecast.unitedradio.it/RMC.mp3" },
+      { title: "Radio Capital", detail: "Classici e successi contemporanei", streamType: "hls", streamUrl: "https://4c4b867c89244861ac216426883d1ad0.msvdn.net/radiocapital/radiocapital/master_ma.m3u8" },
+      { title: "m2o", detail: "Dance ed elettronica", streamType: "hls", streamUrl: "https://4c4b867c89244861ac216426883d1ad0.msvdn.net/radiom2o/radiom2o/master_ma.m3u8" },
+      { title: "Radiofreccia", detail: "Radio rock del gruppo RTL", streamType: "hls", streamUrl: "https://dd782ed59e2a4e86aabf6fc508674b59.msvdn.net/live/S3160845/0tuSetc8UFkF/playlist_audio.m3u8" },
+      { title: "Radio Zeta", detail: "Radio musicale del gruppo RTL", streamType: "audio", streamUrl: "https://streamingv2.shoutcast.com/radio-zeta" },
+      { title: "Radio Bruno", detail: "Grande rete locale italiana", streamType: "audio", streamUrl: "https://router.xdevel.com/audio4s975355-254/stream/icecast.audio" },
+      { title: "Radio Subasio", detail: "Radio di musica italiana", streamType: "audio", streamUrl: "https://icy.unitedradio.it/Subasio.mp3" },
+      { title: "Radio Norba", detail: "Rete del Sud Italia", streamType: "audio", streamUrl: "https://ad2.xdevel.com/radionorba" },
+      { title: "Radio Parsifal", detail: "Stazione di musica italiana", streamType: "audio", streamUrl: "https://stream5.xdevel.com/audio0s976542-1302/stream/icecast.audio" }
     ];
     const els = {
       root: document.documentElement,
@@ -1506,11 +1506,11 @@
     let wakeLock = null;
     let lastCountdownSecond = null;
     const COUNTDOWN_WORDS = {
-      1: "one",
-      2: "two",
-      3: "three",
-      4: "four",
-      5: "five"
+      1: "uno",
+      2: "due",
+      3: "tre",
+      4: "quattro",
+      5: "cinque"
     };
 
     const player = {
@@ -1537,7 +1537,7 @@
           }
         }
       } catch (error) {
-        console.warn("Could not load saved timers.", error);
+        console.warn("Impossibile caricare i timer salvati.", error);
       }
       return {
         timers: [cloneTimer(DEFAULT_TIMER)],
@@ -1549,8 +1549,8 @@
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
       } catch (error) {
-        els.saveStatus.textContent = "Saved in this tab only";
-        console.warn("Could not save timers.", error);
+        els.saveStatus.textContent = "Salvato solo in questa scheda";
+        console.warn("Impossibile salvare i timer.", error);
       }
     }
 
@@ -1582,7 +1582,7 @@
           };
         }
       } catch (error) {
-        console.warn("Could not load music selection.", error);
+        console.warn("Impossibile caricare la selezione musica.", error);
       }
       return fallback;
     }
@@ -1591,7 +1591,7 @@
       try {
         localStorage.setItem(MUSIC_STORAGE_KEY, JSON.stringify(musicState));
       } catch (error) {
-        console.warn("Could not save music selection.", error);
+        console.warn("Impossibile salvare la selezione musica.", error);
       }
     }
 
@@ -1655,17 +1655,17 @@
     function playRadioStream(source, readyRetry = false) {
       if (!source) return;
       pendingRadioPlay = true;
-      els.musicStatus.textContent = `Starting ${source.title}.`;
+      els.musicStatus.textContent = `Avvio ${source.title}.`;
       els.radioPlayer.play().then(() => {
         pendingRadioPlay = false;
-        els.musicStatus.textContent = `${source.title} playing.`;
+        els.musicStatus.textContent = `${source.title} in riproduzione.`;
       }).catch(() => {
         if (source.streamType === "hls" && hlsPlayer && !readyRetry) {
-          els.musicStatus.textContent = `Loading ${source.title}.`;
+          els.musicStatus.textContent = `Caricamento ${source.title}.`;
           return;
         }
         pendingRadioPlay = false;
-        els.musicStatus.textContent = `Could not start ${source.title}. Tap play in the audio bar.`;
+        els.musicStatus.textContent = `Impossibile avviare ${source.title}. Tocca play nella barra audio.`;
       });
     }
 
@@ -1710,8 +1710,8 @@
       prepareMusicPlayer();
       const source = getCurrentMusicSource();
       els.musicStatus.textContent = mode.id === "radio"
-        ? `${mode.title} selected: ${source.title}. Press Start Workout to begin.`
-        : "No music selected. Press Start Workout to begin timer only.";
+        ? `${mode.title} selezionata: ${source.title}. Premi Avvia allenamento per iniziare.`
+        : "Senza musica selezionata. Premi Avvia allenamento per usare solo il timer.";
       renderMusic();
     }
 
@@ -1724,7 +1724,7 @@
         playRadioStream(source);
       } else {
         stopMusic(false);
-        els.musicStatus.textContent = "Workout started without music.";
+        els.musicStatus.textContent = "Allenamento avviato senza musica.";
       }
     }
 
@@ -1733,8 +1733,8 @@
       const source = getCurrentMusicSource();
       pendingRadioPlay = false;
       if (mode.id === "radio") els.radioPlayer.pause();
-      if (mode.id === "radio" && source) els.musicStatus.textContent = `${source.title} paused.`;
-      if (mode.id === "none") els.musicStatus.textContent = "No music selected.";
+      if (mode.id === "radio" && source) els.musicStatus.textContent = `${source.title} in pausa.`;
+      if (mode.id === "none") els.musicStatus.textContent = "Senza musica selezionata.";
     }
 
     function stopMusic(updateStatus = true) {
@@ -1752,7 +1752,7 @@
         els.radioPlayer.pause();
       }
       if (updateStatus) {
-        els.musicStatus.textContent = mode.id === "radio" ? `${source.title} stopped.` : "No music selected.";
+        els.musicStatus.textContent = mode.id === "radio" ? `${source.title} fermata.` : "Senza musica selezionata.";
       }
     }
 
@@ -1766,7 +1766,7 @@
       prepareMusicPlayer();
       renderMusic();
       const source = getCurrentMusicSource();
-      els.musicStatus.textContent = mode.id === "radio" ? `${source.title} selected.` : "Select Italian radio to change stations.";
+      els.musicStatus.textContent = mode.id === "radio" ? `${source.title} selezionata.` : "Seleziona Radio italiane per cambiare stazione.";
       if (player.running) startSelectedMusic();
     }
 
@@ -1774,7 +1774,7 @@
       if (!timer || typeof timer !== "object") return null;
       const normalized = {
         id: typeof timer.id === "string" && timer.id ? timer.id : makeId(),
-        name: String(timer.name || "Workout timer").trim().slice(0, 48) || "Workout timer",
+        name: normalizeTimerName(String(timer.name || "Timer allenamento").trim().slice(0, 48) || "Timer allenamento"),
         sets: clampInt(timer.sets, 1, 50, DEFAULT_TIMER.sets),
         reps: clampInt(timer.reps, 1, 50, DEFAULT_TIMER.reps),
         work: clampInt(timer.work, 1, 3600, DEFAULT_TIMER.work),
@@ -1782,6 +1782,14 @@
         setRest: clampInt(timer.setRest, 0, 3600, DEFAULT_TIMER.setRest)
       };
       return normalized;
+    }
+
+    function normalizeTimerName(name) {
+      if (name === "TRX workout") return "Allenamento TRX";
+      if (name === "Workout timer") return "Timer allenamento";
+      if (name === "New timer") return "Nuovo timer";
+      if (name.endsWith(" copy")) return `${name.slice(0, -5)} copia`;
+      return name;
     }
 
     function clampInt(value, min, max, fallback) {
@@ -1811,7 +1819,7 @@
             set,
             rep,
             seconds: timer.work,
-            label: "Work"
+            label: "Esercizio"
           });
 
           const isFinalRep = set === timer.sets && rep === timer.reps;
@@ -1821,7 +1829,7 @@
               set,
               rep,
               seconds: timer.rest,
-              label: "Rep Rest"
+              label: "Recupero"
             });
           }
 
@@ -1831,7 +1839,7 @@
               set,
               rep,
               seconds: timer.setRest,
-              label: "Set Rest"
+              label: "Recupero serie"
             });
           }
         }
@@ -1865,7 +1873,7 @@
       lastCountdownSecond = null;
       requestScreenWakeLock();
       startSelectedMusic();
-      playCue("start", "Start");
+      playCue("start", "Via");
       tick();
       renderAll();
     }
@@ -1899,7 +1907,7 @@
         player.completed = true;
         player.started = true;
         cancelAnimationFrame(player.animationId);
-        playCue("done", "Workout complete");
+        playCue("done", "Allenamento completato");
         releaseScreenWakeLock();
         stopMusic();
         renderAll();
@@ -1944,40 +1952,40 @@
     }
 
     function phaseLabel(phase) {
-      if (!phase) return "Complete";
-      if (phase.type === "work") return "Work";
-      if (phase.type === "repRest") return "Rep Rest";
-      return "Set Rest";
+      if (!phase) return "Completato";
+      if (phase.type === "work") return "Esercizio";
+      if (phase.type === "repRest") return "Recupero";
+      return "Recupero serie";
     }
 
     function phaseAnnouncement(phase, previous) {
       if (!phase) return "";
-      if (phase.type === "repRest") return "Rest";
-      if (phase.type === "setRest") return "Set rest";
-      if (phase.type === "work" && previous?.type === "setRest") return `Set ${phase.set}`;
-      if (phase.type === "work" && previous?.set !== phase.set) return `Set ${phase.set}`;
-      if (phase.type === "work") return `Rep ${phase.rep}`;
+      if (phase.type === "repRest") return "Recupero";
+      if (phase.type === "setRest") return "Recupero serie";
+      if (phase.type === "work" && previous?.type === "setRest") return `Serie ${phase.set}`;
+      if (phase.type === "work" && previous?.set !== phase.set) return `Serie ${phase.set}`;
+      if (phase.type === "work") return `Ripetizione ${phase.rep}`;
       return phaseLabel(phase);
     }
 
     function phaseContext(phase, timer) {
-      if (!phase) return "Workout complete";
+      if (!phase) return "Allenamento completato";
       if (phase.type === "work") {
-        return `Set ${phase.set} of ${timer.sets}, rep ${phase.rep} of ${timer.reps}`;
+        return `Serie ${phase.set} di ${timer.sets}, ripetizione ${phase.rep} di ${timer.reps}`;
       }
       if (phase.type === "repRest") {
-        return `After rep ${phase.rep}, set ${phase.set} of ${timer.sets}`;
+        return `Dopo la ripetizione ${phase.rep}, serie ${phase.set} di ${timer.sets}`;
       }
-      return `After set ${phase.set} of ${timer.sets}`;
+      return `Dopo la serie ${phase.set} di ${timer.sets}`;
     }
 
     function describeNextPhase() {
-      if (player.completed) return "Finished";
+      if (player.completed) return "Finito";
       const next = player.sequence[player.index + 1];
-      if (!next) return "Finish workout";
-      if (next.type === "work") return `Work, set ${next.set}, rep ${next.rep}, ${next.seconds} sec`;
-      if (next.type === "repRest") return `Rest between reps, ${next.seconds} sec`;
-      return `Rest before next set, ${next.seconds} sec`;
+      if (!next) return "Termina allenamento";
+      if (next.type === "work") return `Esercizio, serie ${next.set}, ripetizione ${next.rep}, ${next.seconds} sec`;
+      if (next.type === "repRest") return `Recupero tra ripetizioni, ${next.seconds} sec`;
+      return `Recupero prima della prossima serie, ${next.seconds} sec`;
     }
 
     function formatTime(totalSeconds) {
@@ -2049,7 +2057,7 @@
       persistStore();
       setEditorOpen(false);
       resetPlayer(normalized);
-      els.saveStatus.textContent = "Saved";
+      els.saveStatus.textContent = "Salvato";
       renderAll();
     }
 
@@ -2066,7 +2074,7 @@
         lastCountdownSecond = null;
         cancelSpeech();
       }
-      els.saveStatus.textContent = "Unsaved changes";
+      els.saveStatus.textContent = "Modifiche non salvate";
       renderAll();
     }
 
@@ -2089,7 +2097,7 @@
       const timer = {
         ...cloneTimer(base),
         id: makeId(),
-        name: uniqueName("New timer")
+        name: uniqueName("Nuovo timer")
       };
       store.timers.push(timer);
       store.activeId = timer.id;
@@ -2107,7 +2115,7 @@
       const timer = {
         ...cloneTimer(base),
         id: makeId(),
-        name: uniqueName(`${base.name} copy`)
+        name: uniqueName(`${base.name} copia`)
       };
       store.timers.push(timer);
       store.activeId = timer.id;
@@ -2122,7 +2130,7 @@
     function deleteTimer() {
       if (store.timers.length <= 1) return;
       const active = getActiveTimer();
-      const confirmed = window.confirm(`Delete "${active.name}"?`);
+      const confirmed = window.confirm(`Eliminare "${active.name}"?`);
       if (!confirmed) return;
       const index = store.timers.findIndex((timer) => timer.id === active.id);
       store.timers = store.timers.filter((timer) => timer.id !== active.id);
@@ -2156,12 +2164,12 @@
           <span class="preset-meta"></span>
         `;
         item.querySelector(".preset-name").textContent = timer.name;
-        item.querySelector(".preset-meta").textContent = `${timer.sets} sets x ${timer.reps} reps | ${timer.work}s work, ${timer.rest}s rest`;
+        item.querySelector(".preset-meta").textContent = `${timer.sets} serie x ${timer.reps} rip. | ${timer.work}s esercizio, ${timer.rest}s recupero`;
         item.addEventListener("click", () => selectTimer(timer.id));
         els.presetList.appendChild(item);
       }
       els.deleteBtn.disabled = store.timers.length <= 1;
-      els.presetSummary.textContent = `${getActiveTimer().name} | ${store.timers.length} saved`;
+      els.presetSummary.textContent = `${getActiveTimer().name} | ${store.timers.length} salvati`;
     }
 
     function renderMusicOptions() {
@@ -2190,13 +2198,13 @@
       const mode = getSelectedMusicMode();
       const source = getCurrentMusicSource();
       const isRadio = mode.id === "radio";
-      els.musicSummary.textContent = isRadio ? `${mode.title}: ${source.title}` : "No music";
+      els.musicSummary.textContent = isRadio ? `${mode.title}: ${source.title}` : "Senza musica";
       els.musicStartLabel.textContent = isRadio
-        ? (player.running ? "Resume Music" : "Start Workout")
-        : (player.running ? "Timer Running" : "Start Workout");
+        ? (player.running ? "Riprendi musica" : "Avvia allenamento")
+        : (player.running ? "Timer in corso" : "Avvia allenamento");
       els.musicStartBtn.disabled = !isRadio && player.running;
-      els.musicPrevLabel.textContent = "Previous Radio";
-      els.musicSkipLabel.textContent = "Next Radio";
+      els.musicPrevLabel.textContent = "Radio precedente";
+      els.musicSkipLabel.textContent = "Radio successiva";
       els.musicPrevBtn.disabled = !isRadio;
       els.musicSkipBtn.disabled = !isRadio;
       els.musicStopBtn.disabled = !isRadio;
@@ -2243,19 +2251,19 @@
       els.root.style.setProperty("--total-progress", `${totalProgress}%`);
 
       els.countdown.textContent = String(remainingSeconds);
-      els.phaseName.textContent = player.completed ? "Complete" : phaseLabel(phase);
-      els.phaseContext.textContent = player.completed ? "Workout complete" : phaseContext(phase, timer);
-      els.phaseChip.lastChild.textContent = player.completed ? "Complete" : player.running ? "Running" : player.started ? "Paused" : "Ready";
+      els.phaseName.textContent = player.completed ? "Completato" : phaseLabel(phase);
+      els.phaseContext.textContent = player.completed ? "Allenamento completato" : phaseContext(phase, timer);
+      els.phaseChip.lastChild.textContent = player.completed ? "Completato" : player.running ? "In corso" : player.started ? "In pausa" : "Pronto";
 
-      const setLabel = phase ? `${phase.set} of ${timer.sets}` : `${timer.sets} of ${timer.sets}`;
-      const repLabel = phase ? `${phase.rep} of ${timer.reps}` : `${timer.reps} of ${timer.reps}`;
+      const setLabel = phase ? `${phase.set} di ${timer.sets}` : `${timer.sets} di ${timer.sets}`;
+      const repLabel = phase ? `${phase.rep} di ${timer.reps}` : `${timer.reps} di ${timer.reps}`;
       els.setMetric.textContent = setLabel;
       els.repMetric.textContent = repLabel;
-      els.phaseMetric.textContent = player.completed ? "Done" : phaseLabel(phase);
+      els.phaseMetric.textContent = player.completed ? "Fatto" : phaseLabel(phase);
       els.nextPhase.textContent = describeNextPhase();
-      els.elapsedTime.textContent = `${formatTime(elapsed)} elapsed`;
+      els.elapsedTime.textContent = `${formatTime(elapsed)} trascorsi`;
 
-      els.startPauseLabel.textContent = player.running ? "Pause" : player.completed ? "Restart" : "Start";
+      els.startPauseLabel.textContent = player.running ? "Pausa" : player.completed ? "Riavvia" : "Avvia";
       els.startPauseBtn.classList.toggle("is-pause", player.running);
       els.playIcon.classList.toggle("hidden", player.running);
       els.pauseIcon.classList.toggle("hidden", !player.running);
@@ -2267,7 +2275,7 @@
       const timer = dirty ? draft : getActiveTimer();
       const sequence = createSequence(timer);
       els.activeName.textContent = timer.name;
-      els.activeStructure.textContent = `${timer.sets} sets x ${timer.reps} reps`;
+      els.activeStructure.textContent = `${timer.sets} serie x ${timer.reps} rip.`;
       els.summarySets.textContent = String(timer.sets);
       els.summaryReps.textContent = String(timer.reps);
       els.summaryTotal.textContent = formatTime(sequenceDuration(sequence));
@@ -2292,7 +2300,7 @@
       els.shell.classList.toggle("editor-collapsed", !editorOpen);
       els.editorPanel.hidden = !editorOpen;
       els.modifyBtn.setAttribute("aria-expanded", String(editorOpen));
-      els.modifyBtnLabel.textContent = editorOpen ? "Hide" : "Modify";
+      els.modifyBtnLabel.textContent = editorOpen ? "Nascondi" : "Modifica";
     }
 
     function renderAll() {
@@ -2316,12 +2324,13 @@
       try {
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = "it-IT";
         utterance.rate = 1;
         utterance.pitch = 1;
         utterance.volume = Math.max(0, Math.min(1, musicState.cueVolume / 100));
         window.speechSynthesis.speak(utterance);
       } catch (error) {
-        console.warn("Voice cue unavailable.", error);
+        console.warn("Cue vocale non disponibile.", error);
       }
     }
 
@@ -2355,7 +2364,7 @@
         osc.start(now);
         osc.stop(now + (kind === "done" ? 0.36 : 0.16));
       } catch (error) {
-        console.warn("Beep cue unavailable.", error);
+        console.warn("Segnale sonoro non disponibile.", error);
       }
     }
 
@@ -2410,7 +2419,7 @@
     });
     els.radioPlayer.addEventListener("playing", () => {
       const source = getCurrentMusicSource();
-      if (source) els.musicStatus.textContent = `${source.title} playing.`;
+      if (source) els.musicStatus.textContent = `${source.title} in riproduzione.`;
     });
     els.radioPlayer.addEventListener("play", () => {
       if (getSelectedMusicMode().id === "radio" && !player.running) {
@@ -2420,7 +2429,7 @@
     els.radioPlayer.addEventListener("pause", () => {
       if (getSelectedMusicMode().id === "radio" && player.running) {
         const source = getCurrentMusicSource();
-        if (source) els.musicStatus.textContent = `${source.title} paused.`;
+        if (source) els.musicStatus.textContent = `${source.title} in pausa.`;
       }
     });
     els.revertBtn.addEventListener("click", () => {
@@ -2428,7 +2437,7 @@
       fillEditor(active);
       draft = cloneTimer(active);
       dirty = false;
-      els.saveStatus.textContent = "Saved";
+      els.saveStatus.textContent = "Salvato";
       setEditorOpen(false);
       renderAll();
     });

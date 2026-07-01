@@ -1,66 +1,66 @@
-# TRX Workout Timer
+# Timer Allenamento TRX
 
-Single-file browser timer for a TRX / Tabata-style workout. It was moved into this project from the Codex thread `019f1cf3-03ce-75a0-b3a9-64d4ee1d910a`.
+Timer browser in un singolo file per un allenamento TRX / Tabata. Il progetto è stato spostato dal thread Codex `019f1cf3-03ce-75a0-b3a9-64d4ee1d910a`.
 
-## Deliverable
+## File
 
-- Main file: `index.html`
-- Logo asset: `assets/trx-timer-logo.png`
-- Original source file copied from: `/Users/giorgioiezzi/Documents/Codex/2026-07-01/okay-so-i-need-you-to/outputs/trx-tabata-timer.html`
-- No build step or app install is required. The page is designed to open directly in a browser.
+- File principale: `index.html`
+- Logo: `assets/trx-timer-logo.png`
+- File sorgente originale copiato da: `/Users/giorgioiezzi/Documents/Codex/2026-07-01/okay-so-i-need-you-to/outputs/trx-tabata-timer.html`
+- Non serve installare l'app o fare una build. La pagina è pensata per aprirsi direttamente nel browser.
 
-## Default Workout
+## Allenamento predefinito
 
-- Timer name: `TRX workout`
-- Sets: `10`
-- Reps per set: `6`
-- Rep duration: `24` seconds
-- Rest between reps: `10` seconds
-- Rest between sets: `15` seconds
-- After rep 6, the 15-second set rest replaces the normal 10-second rep rest.
-- Total default duration: `34:35`
+- Nome timer: `Allenamento TRX`
+- Serie: `10`
+- Ripetizioni per serie: `6`
+- Durata ripetizione: `24` secondi
+- Recupero tra ripetizioni: `10` secondi
+- Recupero tra serie: `15` secondi
+- Dopo la ripetizione 6, il recupero serie da 15 secondi sostituisce il normale recupero da 10 secondi.
+- Durata totale predefinita: `34:35`
 
-Total math:
+Calcolo totale:
 
-- Work: `10 * 6 * 24s = 24:00`
-- Between-rep rests: `10 sets * 5 rests * 10s = 8:20`
-- Between-set rests: `9 rests * 15s = 2:15`
-- Total: `34:35`
+- Esercizio: `10 * 6 * 24s = 24:00`
+- Recuperi tra ripetizioni: `10 serie * 5 recuperi * 10s = 8:20`
+- Recuperi tra serie: `9 recuperi * 15s = 2:15`
+- Totale: `34:35`
 
-## Current Features
+## Funzioni attuali
 
-- Start, Pause, and Reset playback controls.
-- Automatic phase tracking for Work, Rep Rest, Set Rest, and Finished.
-- Saved custom timers using browser `localStorage`.
-- New, Copy, Delete, Save, and Revert timer editing flows.
-- Editable timer name, sets, reps per set, rep seconds, rep rest seconds, and set rest seconds.
-- Sound cues for transitions.
-- Responsive desktop and mobile layout.
-- Premium generated logo used for the header mark and favicon.
-- Timer editor is hidden after saving or selecting a saved timer.
-- Modify button reopens the editor; Hide closes it again.
-- Skip control was removed per the latest browser comment.
-- My Timers is collapsed by default and appears above the timer so saved timers are easy to reach without taking over the phone layout.
-- Music is collapsed by default and offers No music or Italian radio.
-- Italian radio includes 20 mainstream Italian stations with Previous Radio and Next Radio controls.
-- Starting the workout starts the selected radio stream; pausing/resetting the timer pauses/stops radio.
-- Music volume and Cue volume have large visible sliders.
-- Cue sounds and spoken countdowns automatically lower the music volume temporarily, then restore it.
-- While the timer runs, the app requests a screen wake lock where the browser supports it.
+- Controlli Avvia, Pausa e Azzera.
+- Tracciamento automatico delle fasi: Esercizio, Recupero, Recupero serie e Completato.
+- Timer personalizzati salvati con `localStorage` del browser.
+- Flussi Nuovo, Copia, Elimina, Salva e Annulla.
+- Nome timer, serie, ripetizioni per serie, secondi ripetizione, recupero tra ripetizioni e recupero tra serie modificabili.
+- Segnali sonori e vocali per le transizioni.
+- Layout responsive desktop e mobile.
+- Logo generato usato nell'intestazione e come favicon.
+- Editor timer nascosto dopo il salvataggio o la selezione di un timer salvato.
+- Il pulsante Modifica riapre l'editor; Nascondi lo richiude.
+- Il controllo Salta è stato rimosso.
+- I miei timer è chiuso di default e appare sopra il timer, così i timer salvati sono facili da raggiungere senza occupare il layout mobile.
+- Musica è chiusa di default e offre Senza musica o Radio italiane.
+- Radio italiane include 20 stazioni italiane principali con controlli Radio precedente e Radio successiva.
+- Avviare l'allenamento avvia la radio selezionata; pausa/azzera mettono in pausa o fermano la radio.
+- Volume musica e Volume avvisi hanno slider grandi e visibili.
+- I segnali e i countdown vocali abbassano temporaneamente il volume della musica, poi lo ripristinano.
+- Durante il timer, l'app richiede il blocco schermo attivo dove supportato dal browser.
 
-## Music Sources
+## Fonti audio
 
-- No music mode: starts the timer without loading any audio stream. Voice cues and beeps still work.
-- Italian Radio mode: 20 mainstream stations, using direct audio or HLS streams verified to respond as browser-playable media.
+- Senza musica: avvia il timer senza caricare stream audio. Voce e segnali sonori restano attivi.
+- Radio italiane: 20 stazioni principali, con stream audio diretti o HLS verificati come media riproducibili dal browser.
   - RTL 102.5, Radio Italia, RDS, Radio Deejay, Radio 105, Radio Kiss Kiss
   - Rai Radio 1, Virgin Radio, Radio 24, Rai Radio 2, R101, Radio Monte Carlo
   - Radio Capital, m2o, Radiofreccia, Radio Zeta, Radio Bruno, Radio Subasio
   - Radio Norba, Radio Parsifal
 
-## Old Thread Notes
+## Note dal vecchio thread
 
-The original request was to build a website or plain HTML file because the user wanted the user's mom to use it without downloading an app.
+La richiesta originale era creare un sito o un file HTML semplice perché la mamma dell'utente potesse usarlo senza scaricare un'app.
 
-The first completed version was verified in the old thread with Playwright on desktop `1440x920` and mobile `390x844`. That pass checked start, pause, reset, the rep-6 transition into a 15-second Set Rest, custom timer save, reload persistence, delete confirmation, responsive layout, and console cleanliness after the favicon fix.
+La prima versione completata era stata verificata nel vecchio thread con Playwright su desktop `1440x920` e mobile `390x844`. Quel controllo includeva avvio, pausa, azzera, transizione dalla ripetizione 6 al recupero serie da 15 secondi, salvataggio timer personalizzato, persistenza dopo reload, conferma eliminazione, layout responsive e console pulita dopo la correzione della favicon.
 
-The latest follow-up edit in the old thread was interrupted after code patches had been applied. Those patches are present in this project copy: the editor starts collapsed with a Modify/Hide toggle, and the Skip button has been removed.
+L'ultima modifica nel vecchio thread era stata interrotta dopo l'applicazione delle patch. Queste patch sono presenti in questa copia del progetto: l'editor parte chiuso con toggle Modifica/Nascondi e il pulsante Salta è stato rimosso.
