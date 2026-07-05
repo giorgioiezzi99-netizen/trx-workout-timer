@@ -1521,7 +1521,8 @@
       running: false,
       completed: false,
       started: false,
-      animationId: 0
+      animationId: 0,
+      intervalId: 0
     };
 
     function loadStore() {
@@ -1847,8 +1848,30 @@
       return sequence;
     }
 
-    function resetPlayer(timer = getActiveTimer()) {
+    function stopTicking() {
       cancelAnimationFrame(player.animationId);
+      player.animationId = 0;
+      if (player.intervalId) {
+        clearInterval(player.intervalId);
+        player.intervalId = 0;
+      }
+    }
+
+    function startTicking() {
+      stopTicking();
+      player.animationId = requestAnimationFrame(function frame() {
+        runTick();
+        if (player.running) {
+          player.animationId = requestAnimationFrame(frame);
+        }
+      });
+      // Backup clock: keeps advancing even when requestAnimationFrame is
+      // throttled or frozen (screen off / tab in background).
+      player.intervalId = window.setInterval(runTick, 250);
+    }
+
+    function resetPlayer(timer = getActiveTimer()) {
+      stopTicking();
       cancelSpeech();
       stopMusic(false);
       releaseScreenWakeLock();
@@ -1874,7 +1897,7 @@
       requestScreenWakeLock();
       startSelectedMusic();
       playCue("start", "Via");
-      tick();
+      startTicking();
       renderAll();
     }
 
@@ -1882,7 +1905,7 @@
       if (!player.running) return;
       player.remainingMs = Math.max(0, player.phaseEndAt - performance.now());
       player.running = false;
-      cancelAnimationFrame(player.animationId);
+      stopTicking();
       cancelSpeech();
       pauseMusic();
       releaseScreenWakeLock();
@@ -1897,37 +1920,57 @@
       }
     }
 
-    function advancePhase(manual = false) {
+    function completePlayer() {
+      player.index = player.sequence.length - 1;
+      player.remainingMs = 0;
+      player.running = false;
+      player.completed = true;
+      player.started = true;
+      stopTicking();
+      playCue("done", "Allenamento completato");
+      releaseScreenWakeLock();
+      stopMusic();
+      renderAll();
+    }
+
+    // Advance the player to the phase that should be active at `now`, catching
+    // up every phase whose deadline has already passed. phaseEndAt is an
+    // absolute clock accumulated phase by phase, so after the tab/screen wakes
+    // from being frozen we land on the exact phase with the correct time left,
+    // instead of skipping a single phase and restarting it from scratch.
+    function syncPlayerToClock(now) {
       if (!player.sequence.length) return;
-      const previous = player.sequence[player.index];
-      cancelAnimationFrame(player.animationId);
-      if (player.index >= player.sequence.length - 1) {
-        player.remainingMs = 0;
-        player.running = false;
-        player.completed = true;
-        player.started = true;
-        cancelAnimationFrame(player.animationId);
-        playCue("done", "Allenamento completato");
-        releaseScreenWakeLock();
-        stopMusic();
-        renderAll();
+      let landedFrom = null;
+      let advanced = false;
+
+      while (player.index < player.sequence.length - 1 && now >= player.phaseEndAt) {
+        landedFrom = player.sequence[player.index];
+        player.index += 1;
+        player.phaseEndAt += player.sequence[player.index].seconds * 1000;
+        advanced = true;
+      }
+
+      if (player.index >= player.sequence.length - 1 && now >= player.phaseEndAt) {
+        completePlayer();
         return;
       }
 
-      player.index += 1;
-      const next = player.sequence[player.index];
-      player.remainingMs = next.seconds * 1000;
-      player.phaseEndAt = performance.now() + player.remainingMs;
-      lastCountdownSecond = null;
-      playCue(manual ? "skip" : next.type, phaseAnnouncement(next, previous));
-      renderAll();
-      if (player.running) tick();
+      player.remainingMs = Math.max(0, player.phaseEndAt - now);
+
+      if (advanced) {
+        const current = player.sequence[player.index];
+        lastCountdownSecond = null;
+        playCue(current.type, phaseAnnouncement(current, landedFrom));
+        renderAll();
+      }
     }
 
-    function tick() {
+    function runTick() {
       if (!player.running) return;
       const now = performance.now();
-      player.remainingMs = Math.max(0, player.phaseEndAt - now);
+
+      syncPlayerToClock(now);
+      if (!player.running) return; // syncPlayerToClock may have completed the workout
 
       const currentSecond = Math.ceil(player.remainingMs / 1000);
       if (currentSecond > 0 && currentSecond <= 5 && currentSecond !== lastCountdownSecond) {
@@ -1935,13 +1978,7 @@
         playCue("countdown", COUNTDOWN_WORDS[currentSecond]);
       }
 
-      if (player.remainingMs <= 0) {
-        advancePhase(false);
-        return;
-      }
-
       renderTimer();
-      player.animationId = requestAnimationFrame(tick);
     }
 
     function phaseColor(phase) {
@@ -2472,6 +2509,8 @@
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "visible" && player.running) {
         requestScreenWakeLock();
+        // Catch up instantly on return instead of waiting for the next frame.
+        runTick();
       }
     });
 
