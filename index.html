@@ -1381,6 +1381,8 @@
   <script>
     const STORAGE_KEY = "trx-tabata-timers-v1";
     const MUSIC_STORAGE_KEY = "trx-tabata-music-v1";
+    const RUN_STORAGE_KEY = "trx-tabata-run-v1";
+    const RUN_STATE_MAX_AGE_MS = 6 * 60 * 60 * 1000;
     const DEFAULT_TIMER = {
       id: "trx-workout-default",
       name: "Allenamento TRX",
@@ -1870,8 +1872,74 @@
       player.intervalId = window.setInterval(runTick, 250);
     }
 
+    // Persist the workout position (anchored to wall-clock time) so the timer
+    // survives the user leaving the browser: on reload we restore the state and
+    // syncPlayerToClock() lands on the phase that should be active right now.
+    function persistRunState() {
+      if (!player.started || player.completed) {
+        clearRunState();
+        return;
+      }
+      try {
+        localStorage.setItem(RUN_STORAGE_KEY, JSON.stringify({
+          activeId: store.activeId,
+          index: player.index,
+          phaseEndAt: player.phaseEndAt,
+          remainingMs: player.remainingMs,
+          running: player.running,
+          savedAt: Date.now()
+        }));
+      } catch (error) {
+        console.warn("Impossibile salvare lo stato dell'allenamento.", error);
+      }
+    }
+
+    function clearRunState() {
+      try {
+        localStorage.removeItem(RUN_STORAGE_KEY);
+      } catch (error) {
+        console.warn("Impossibile azzerare lo stato dell'allenamento.", error);
+      }
+    }
+
+    function readRunState() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(RUN_STORAGE_KEY) || "null");
+        if (!saved || typeof saved !== "object") return null;
+        if (!Number.isFinite(saved.savedAt) || Date.now() - saved.savedAt > RUN_STATE_MAX_AGE_MS) return null;
+        return saved;
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function restoreRunState(saved) {
+      if (!saved || saved.activeId !== store.activeId) return;
+      const index = clampInt(saved.index, 0, player.sequence.length - 1, -1);
+      if (index < 0 || !player.sequence.length) return;
+      player.index = index;
+      player.started = true;
+      if (saved.running && Number.isFinite(saved.phaseEndAt)) {
+        player.phaseEndAt = saved.phaseEndAt;
+        player.running = true;
+        syncPlayerToClock(Date.now());
+        if (player.running) {
+          startTicking();
+          requestScreenWakeLock();
+        }
+      } else if (Number.isFinite(saved.remainingMs)) {
+        player.remainingMs = Math.max(0, saved.remainingMs);
+        player.running = false;
+      } else {
+        return;
+      }
+      persistRunState();
+      renderAll();
+    }
+
     function resetPlayer(timer = getActiveTimer()) {
       stopTicking();
+      clearRunState();
       cancelSpeech();
       stopMusic(false);
       releaseScreenWakeLock();
@@ -1896,6 +1964,7 @@
       // performance.now() stops advancing while the device sleeps, which froze
       // the timer after the screen turned off.
       player.phaseEndAt = Date.now() + player.remainingMs;
+      persistRunState();
       lastCountdownSecond = null;
       requestScreenWakeLock();
       startSelectedMusic();
@@ -1908,6 +1977,7 @@
       if (!player.running) return;
       player.remainingMs = Math.max(0, player.phaseEndAt - Date.now());
       player.running = false;
+      persistRunState();
       stopTicking();
       cancelSpeech();
       pauseMusic();
@@ -1930,7 +2000,12 @@
       player.completed = true;
       player.started = true;
       stopTicking();
-      playCue("done", "Allenamento completato");
+      clearRunState();
+      try {
+        playCue("done", "Allenamento completato");
+      } catch (error) {
+        console.warn("Avviso di fine non disponibile.", error);
+      }
       releaseScreenWakeLock();
       stopMusic();
       renderAll();
@@ -1961,10 +2036,21 @@
       player.remainingMs = Math.max(0, player.phaseEndAt - now);
 
       if (advanced) {
+        persistRunState();
         const current = player.sequence[player.index];
         lastCountdownSecond = null;
-        playCue(current.type, phaseAnnouncement(current, landedFrom));
-        renderAll();
+        // Cues and rendering must never be able to freeze the clock: if either
+        // throws on some mobile browser, the phase math above already advanced.
+        try {
+          playCue(current.type, phaseAnnouncement(current, landedFrom));
+        } catch (error) {
+          console.warn("Avviso di fase non disponibile.", error);
+        }
+        try {
+          renderAll();
+        } catch (error) {
+          console.warn("Aggiornamento interfaccia non riuscito.", error);
+        }
       }
     }
 
@@ -1978,10 +2064,18 @@
       const currentSecond = Math.ceil(player.remainingMs / 1000);
       if (currentSecond > 0 && currentSecond <= 5 && currentSecond !== lastCountdownSecond) {
         lastCountdownSecond = currentSecond;
-        playCue("countdown", COUNTDOWN_WORDS[currentSecond]);
+        try {
+          playCue("countdown", COUNTDOWN_WORDS[currentSecond]);
+        } catch (error) {
+          console.warn("Conto alla rovescia vocale non disponibile.", error);
+        }
       }
 
-      renderTimer();
+      try {
+        renderTimer();
+      } catch (error) {
+        console.warn("Aggiornamento timer non riuscito.", error);
+      }
     }
 
     function phaseColor(phase) {
@@ -2523,6 +2617,9 @@
     // so resync on pageshow and window focus as well.
     window.addEventListener("pageshow", resumeFromWake);
     window.addEventListener("focus", resumeFromWake);
+    // Save the position when the page is being hidden or torn down, so leaving
+    // the browser (or the OS killing the tab) does not lose the workout.
+    window.addEventListener("pagehide", persistRunState);
 
     window.addEventListener("beforeunload", (event) => {
       if (!dirty) return;
@@ -2530,9 +2627,12 @@
       event.returnValue = "";
     });
 
+    // Read the saved run state BEFORE resetPlayer, which clears it.
+    const pendingRunState = readRunState();
     fillEditor(getActiveTimer());
     prepareMusicPlayer();
     resetPlayer(getActiveTimer());
+    restoreRunState(pendingRunState);
   </script>
 </body>
 </html>
