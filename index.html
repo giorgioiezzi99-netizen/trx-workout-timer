@@ -1892,7 +1892,10 @@
       if (!player.sequence.length) resetPlayer(getActiveTimer());
       player.running = true;
       player.started = true;
-      player.phaseEndAt = performance.now() + player.remainingMs;
+      // Date.now() (wall clock) instead of performance.now(): on mobile,
+      // performance.now() stops advancing while the device sleeps, which froze
+      // the timer after the screen turned off.
+      player.phaseEndAt = Date.now() + player.remainingMs;
       lastCountdownSecond = null;
       requestScreenWakeLock();
       startSelectedMusic();
@@ -1903,7 +1906,7 @@
 
     function pausePlayer() {
       if (!player.running) return;
-      player.remainingMs = Math.max(0, player.phaseEndAt - performance.now());
+      player.remainingMs = Math.max(0, player.phaseEndAt - Date.now());
       player.running = false;
       stopTicking();
       cancelSpeech();
@@ -1967,7 +1970,7 @@
 
     function runTick() {
       if (!player.running) return;
-      const now = performance.now();
+      const now = Date.now();
 
       syncPlayerToClock(now);
       if (!player.running) return; // syncPlayerToClock may have completed the workout
@@ -2506,13 +2509,20 @@
       }
     });
 
+    function resumeFromWake() {
+      if (!player.running) return;
+      requestScreenWakeLock();
+      // Catch up instantly on return instead of waiting for the next frame.
+      runTick();
+    }
+
     document.addEventListener("visibilitychange", () => {
-      if (document.visibilityState === "visible" && player.running) {
-        requestScreenWakeLock();
-        // Catch up instantly on return instead of waiting for the next frame.
-        runTick();
-      }
+      if (document.visibilityState === "visible") resumeFromWake();
     });
+    // iOS Safari does not always fire visibilitychange when the screen wakes,
+    // so resync on pageshow and window focus as well.
+    window.addEventListener("pageshow", resumeFromWake);
+    window.addEventListener("focus", resumeFromWake);
 
     window.addEventListener("beforeunload", (event) => {
       if (!dirty) return;
