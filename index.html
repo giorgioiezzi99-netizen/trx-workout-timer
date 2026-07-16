@@ -1358,7 +1358,7 @@
     const RUN_STORAGE_KEY = "trx-tabata-run-v1";
     const RUN_STATE_MAX_AGE_MS = 6 * 60 * 60 * 1000;
     const RADIO_MEDIA_LEVEL = 0.82;
-    const CUE_MEDIA_LEVEL = 0.92;
+    const CUE_MEDIA_LEVEL = 1;
     const DEFAULT_TIMER = {
       id: "trx-workout-default",
       name: "Allenamento TRX",
@@ -1391,7 +1391,7 @@
       { title: "Radio Kiss Kiss", detail: "Radio musicale nazionale", streamType: "audio", streamUrl: "https://kisskiss.fluidstream.eu/KissKiss.mp3" },
       { title: "Rai Radio 1", detail: "Radio nazionale Rai", streamType: "audio", streamUrl: "https://icecdn-19d24861e90342cc8decb03c24c8a419.msvdn.net/icecastRelay/S18493106/rCMKqdMFKPBB/icecast" },
       { title: "Virgin Radio", detail: "Musica rock", streamType: "audio", streamUrl: "https://icecast.unitedradio.it/Virgin.mp3" },
-      { title: "Radio 24", detail: "Il Sole 24 Ore", streamType: "audio", streamUrl: "http://shoutcast2.radio24.it:8000/;" },
+      { title: "Rai Radio 3", detail: "Cultura, musica e approfondimento Rai", streamType: "audio", streamUrl: "https://icecdn-19d24861e90342cc8decb03c24c8a419.msvdn.net/icecastRelay/S56630579/yEbkcBtIoSwd/icecast" },
       { title: "Rai Radio 2", detail: "Musica e intrattenimento Rai", streamType: "audio", streamUrl: "https://icecdn-19d24861e90342cc8decb03c24c8a419.msvdn.net/icecastRelay/S35942484/yp5F67151K92/icecast" },
       { title: "R101", detail: "Musica e grandi successi", streamType: "audio", streamUrl: "https://icecast.unitedradio.it/r101_mp3" },
       { title: "Radio Monte Carlo", detail: "Musica e stile", streamType: "audio", streamUrl: "https://icecast.unitedradio.it/RMC.mp3" },
@@ -1486,6 +1486,8 @@
     const voiceSamplePromises = new Map();
     let hlsPlayer = null;
     let pendingRadioPlay = false;
+    let radioRetryCount = 0;
+    let radioRecoveryTimer = 0;
     let duckRestoreTimer = 0;
     let duckState = null;
     let wakeLock = null;
@@ -1679,6 +1681,25 @@
       });
     }
 
+    function scheduleRadioRecovery(source) {
+      if (!player.running || musicState.mode !== "radio" || !source) return;
+      window.clearTimeout(radioRecoveryTimer);
+      radioRecoveryTimer = window.setTimeout(() => {
+        radioRecoveryTimer = 0;
+        if (!player.running || getCurrentMusicSource()?.streamUrl !== source.streamUrl) return;
+        if (radioRetryCount < 1) {
+          radioRetryCount += 1;
+          els.musicStatus.textContent = `Riconnessione a ${source.title}.`;
+          prepareMusicPlayer();
+          playRadioStream(source);
+          return;
+        }
+        els.musicStatus.textContent = `${source.title} non risponde. Passo alla radio successiva.`;
+        radioRetryCount = 0;
+        changeMusicSource(1);
+      }, 1400);
+    }
+
     function prepareMusicPlayer() {
       const source = getCurrentMusicSource();
       const isRadio = musicState.mode === "radio" && source;
@@ -1700,6 +1721,22 @@
             if (pendingRadioPlay && getCurrentMusicSource()?.streamUrl === source.streamUrl) {
               playRadioStream(source, true);
             }
+          });
+          hlsPlayer.on(Hls.Events.ERROR, (_event, data) => {
+            if (!data.fatal) return;
+            if (data.type === Hls.ErrorTypes.NETWORK_ERROR && radioRetryCount < 1) {
+              radioRetryCount += 1;
+              els.musicStatus.textContent = `Riconnessione a ${source.title}.`;
+              hlsPlayer.startLoad();
+              return;
+            }
+            if (data.type === Hls.ErrorTypes.MEDIA_ERROR && radioRetryCount < 1) {
+              radioRetryCount += 1;
+              els.musicStatus.textContent = `Ripristino audio di ${source.title}.`;
+              hlsPlayer.recoverMediaError();
+              return;
+            }
+            scheduleRadioRecovery(source);
           });
         } else if (els.radioPlayer.src !== source.streamUrl) {
           els.radioPlayer.src = source.streamUrl;
@@ -1742,6 +1779,8 @@
       const mode = getSelectedMusicMode();
       const source = getCurrentMusicSource();
       pendingRadioPlay = false;
+      window.clearTimeout(radioRecoveryTimer);
+      radioRecoveryTimer = 0;
       if (mode.id === "radio") els.radioPlayer.pause();
       if (mode.id === "radio" && source) els.musicStatus.textContent = `${source.title} in pausa.`;
       if (mode.id === "none") els.musicStatus.textContent = "Senza musica selezionata.";
@@ -1751,6 +1790,9 @@
       const mode = getSelectedMusicMode();
       const source = getCurrentMusicSource();
       pendingRadioPlay = false;
+      window.clearTimeout(radioRecoveryTimer);
+      radioRecoveryTimer = 0;
+      radioRetryCount = 0;
       if (mode.id === "radio") {
         els.radioPlayer.pause();
         try {
@@ -1769,6 +1811,7 @@
     function changeMusicSource(direction) {
       const mode = getSelectedMusicMode();
       stopMusic(false);
+      radioRetryCount = 0;
       if (mode.id === "radio") {
         musicState.radioIndex = (musicState.radioIndex + direction + RADIO_STATIONS.length) % RADIO_STATIONS.length;
       }
@@ -2651,8 +2694,18 @@
       combined.set(beep, 0);
       let writeAt = beep.length + gap.length;
       voiceParts.forEach((part, partIndex) => {
+        let sourcePeak = 1;
+        for (const sample of part) sourcePeak = Math.max(sourcePeak, Math.abs(sample));
         for (let i = 0; i < part.length; i += 1) {
-          combined[writeAt + i] = Math.max(-32768, Math.min(32767, Math.round(part[i] * level * 1.3)));
+          const normalized = part[i] / sourcePeak;
+          const magnitude = Math.abs(normalized);
+          // Voice-focused compression: raise quieter syllables substantially
+          // while keeping peaks clean. This improves intelligibility over a
+          // full-volume radio without introducing hard clipping.
+          const shaped = magnitude < 0.006
+            ? 0
+            : Math.sign(normalized) * Math.pow(magnitude, 0.68);
+          combined[writeAt + i] = Math.round(shaped * level * 0.98 * 32767);
         }
         writeAt += part.length;
         if (partIndex < voiceParts.length - 1) writeAt += tokenGap.length;
@@ -2970,6 +3023,9 @@
       els.musicStatus.textContent = "Avviso di prova inviato. Se hai appena collegato la cassa, provalo prima di avviare.";
     });
     els.radioPlayer.addEventListener("playing", () => {
+      radioRetryCount = 0;
+      window.clearTimeout(radioRecoveryTimer);
+      radioRecoveryTimer = 0;
       const source = getCurrentMusicSource();
       if (source) els.musicStatus.textContent = `${source.title} in riproduzione.`;
     });
@@ -2983,6 +3039,9 @@
         const source = getCurrentMusicSource();
         if (source) els.musicStatus.textContent = `${source.title} in pausa.`;
       }
+    });
+    els.radioPlayer.addEventListener("error", () => {
+      scheduleRadioRecovery(getCurrentMusicSource());
     });
     els.revertBtn.addEventListener("click", () => {
       const active = getActiveTimer();
