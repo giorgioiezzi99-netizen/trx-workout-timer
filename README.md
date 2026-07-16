@@ -34,7 +34,7 @@ Calcolo totale:
 - Timer personalizzati salvati con `localStorage` del browser.
 - Flussi Nuovo, Copia, Elimina, Salva e Annulla.
 - Nome timer, serie, ripetizioni per serie, secondi ripetizione, recupero tra ripetizioni e recupero tra serie modificabili.
-- Segnali sonori e vocali per le transizioni.
+- Segnali sonori e voce italiana preregistrata per le transizioni.
 - Layout responsive desktop e mobile.
 - Logo generato usato nell'intestazione e come favicon.
 - Editor timer nascosto dopo il salvataggio o la selezione di un timer salvato.
@@ -45,7 +45,10 @@ Calcolo totale:
 - Radio italiane include 20 stazioni italiane principali con controlli Radio precedente e Radio successiva.
 - Avviare l'allenamento avvia la radio selezionata; pausa/azzera mettono in pausa o fermano la radio.
 - Volume musica e Volume avvisi hanno slider grandi e visibili.
-- I segnali e i countdown vocali abbassano temporaneamente il volume della musica, poi lo ripristinano.
+- Segnali e voce sono riprodotti come un unico file audio multimediale, così seguono la stessa uscita Bluetooth della musica.
+- Il volume avvisi viene applicato direttamente ai campioni di segnali e voce, anche sui dispositivi che ignorano il volume degli elementi audio.
+- Su iPhone, quando Safari non permette di regolare il volume della radio dalla pagina, l'interfaccia indica di usare i tasti fisici del telefono.
+- I segnali e i countdown vocali abbassano temporaneamente il volume della musica dove il browser permette di regolarlo, poi lo ripristinano.
 - Durante il timer, l'app richiede il blocco schermo attivo dove supportato dal browser.
 
 ## Fonti audio
