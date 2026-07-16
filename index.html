@@ -1273,6 +1273,9 @@
                 </button>
               </div>
             </div>
+            <div class="status-line" id="lockScreenHint">
+              Per gli avvisi a telefono bloccato, apri questa pagina in Safari e premi Avvia prima di bloccare lo schermo.
+            </div>
             <div class="music-player" id="musicPlayerArea" hidden>
               <audio id="radioPlayer" controls preload="none" hidden></audio>
             </div>
@@ -1519,6 +1522,9 @@
     let musicState = loadMusicState();
     let audioContext = null;
     let cueAudio = null;
+    let workoutCueAudio = null;
+    let workoutCueTrack = null;
+    let workoutCueTrackPromise = null;
     let silentCueUrl = "";
     let cueRequestId = 0;
     const cueUrlCache = new Map();
@@ -1530,6 +1536,8 @@
     let duckState = null;
     let wakeLock = null;
     let lastCountdownSecond = null;
+    const IS_IOS_MEDIA = /iPad|iPhone|iPod/.test(navigator.userAgent)
+      || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
     const COUNTDOWN_WORDS = {
       1: "uno",
       2: "due",
@@ -1638,6 +1646,10 @@
     function setMediaVolume(percent = musicState.musicVolume) {
       const value = Number(percent);
       const level = Number.isFinite(value) ? Math.max(0, Math.min(1, value / 100)) : 0.8;
+      if (IS_IOS_MEDIA) {
+        musicVolumeUnsupported = true;
+        return;
+      }
       try {
         els.radioPlayer.volume = level;
         // iOS ignores element volume (the getter snaps back): detect it so we
@@ -1692,7 +1704,7 @@
       els.musicVolumeValue.value = `${musicState.musicVolume}%`;
       els.musicVolumeValue.textContent = `${musicState.musicVolume}%`;
       els.musicVolumeHint.textContent = musicVolumeUnsupported
-        ? "Su iPhone questo volume si regola con i tasti fisici del telefono."
+        ? "Su iPhone usa i tasti fisici: iOS non permette al sito di cambiare il volume."
         : "Regola il volume della radio.";
       els.cueVolumeInput.value = String(musicState.cueVolume);
       els.cueVolumeValue.value = `${musicState.cueVolume}%`;
@@ -2002,6 +2014,7 @@
 
     function resetPlayer(timer = getActiveTimer()) {
       stopTicking();
+      stopWorkoutCueTrack(true);
       clearRunState();
       cancelSpeech();
       stopMusic(false);
@@ -2014,6 +2027,7 @@
       player.completed = false;
       player.started = false;
       lastCountdownSecond = null;
+      prepareWorkoutCueTrack(timer);
       renderAll();
     }
 
@@ -2033,12 +2047,14 @@
       // playCue below runs in the same tap, which unlocks it for the rest of
       // the workout. Also warm up the WebAudio fallback.
       primeCueAudio();
+      primeWorkoutCueAudio();
       const cueContext = ensureAudioContext();
       if (cueContext && cueContext.state !== "running") {
         cueContext.resume().catch(() => {});
       }
       requestScreenWakeLock();
       startSelectedMusic();
+      startWorkoutCueTrack(getActiveTimer());
       playCue("start", "Via");
       startTicking();
       renderAll();
@@ -2050,6 +2066,7 @@
       player.running = false;
       persistRunState();
       stopTicking();
+      stopWorkoutCueTrack(false);
       cancelSpeech();
       pauseMusic();
       releaseScreenWakeLock();
@@ -2071,6 +2088,11 @@
       player.completed = true;
       player.started = true;
       stopTicking();
+      if (IS_IOS_MEDIA && workoutCueAudio && !workoutCueAudio.paused) {
+        window.setTimeout(() => stopWorkoutCueTrack(true), 3200);
+      } else {
+        stopWorkoutCueTrack(true);
+      }
       clearRunState();
       try {
         playCue("done", "Allenamento completato");
@@ -2685,10 +2707,7 @@
       cueUrlCache.clear();
     }
 
-    async function buildMediaCueUrl(kind, spokenText, level) {
-      const levelPercent = Math.round(level * 100);
-      const cacheKey = `${kind}:${spokenText}:${levelPercent}`;
-      if (cueUrlCache.has(cacheKey)) return cueUrlCache.get(cacheKey);
+    async function buildMediaCueSamples(kind, spokenText, level) {
       const keys = voiceAssetKeys(spokenText);
       const voiceParts = await Promise.all(keys.map(loadVoiceSample));
       const beep = buildBeepSamples(kind, level);
@@ -2707,6 +2726,14 @@
         writeAt += part.length;
         if (partIndex < voiceParts.length - 1) writeAt += tokenGap.length;
       });
+      return combined;
+    }
+
+    async function buildMediaCueUrl(kind, spokenText, level) {
+      const levelPercent = Math.round(level * 100);
+      const cacheKey = `${kind}:${spokenText}:${levelPercent}`;
+      if (cueUrlCache.has(cacheKey)) return cueUrlCache.get(cacheKey);
+      const combined = await buildMediaCueSamples(kind, spokenText, level);
       const url = createWavUrl(combined);
       cueUrlCache.set(cacheKey, url);
       return url;
@@ -2732,6 +2759,154 @@
       audio.load();
       const attempt = audio.play();
       if (attempt && typeof attempt.catch === "function") attempt.catch(() => {});
+    }
+
+    function createPcm8WavUrl(samples, rate = 8000) {
+      const buffer = new ArrayBuffer(44 + samples.length);
+      const view = new DataView(buffer);
+      const writeAscii = (offset, text) => {
+        for (let i = 0; i < text.length; i += 1) view.setUint8(offset + i, text.charCodeAt(i));
+      };
+      writeAscii(0, "RIFF");
+      view.setUint32(4, 36 + samples.length, true);
+      writeAscii(8, "WAVE");
+      writeAscii(12, "fmt ");
+      view.setUint32(16, 16, true);
+      view.setUint16(20, 1, true);
+      view.setUint16(22, 1, true);
+      view.setUint32(24, rate, true);
+      view.setUint32(28, rate, true);
+      view.setUint16(32, 1, true);
+      view.setUint16(34, 8, true);
+      writeAscii(36, "data");
+      view.setUint32(40, samples.length, true);
+      new Uint8Array(buffer, 44).set(samples);
+      return URL.createObjectURL(new Blob([buffer], { type: "audio/wav" }));
+    }
+
+    function ensureWorkoutCueAudio() {
+      if (workoutCueAudio) return workoutCueAudio;
+      workoutCueAudio = document.createElement("audio");
+      workoutCueAudio.setAttribute("playsinline", "");
+      workoutCueAudio.preload = "auto";
+      workoutCueAudio.style.display = "none";
+      document.body.appendChild(workoutCueAudio);
+      return workoutCueAudio;
+    }
+
+    function primeWorkoutCueAudio() {
+      const audio = ensureWorkoutCueAudio();
+      if (!silentCueUrl) silentCueUrl = createWavUrl(new Int16Array(1103));
+      audio.src = silentCueUrl;
+      audio.load();
+      const attempt = audio.play();
+      if (attempt && typeof attempt.catch === "function") attempt.catch(() => {});
+    }
+
+    function workoutCueEvents(timer) {
+      const sequence = createSequence(timer);
+      const events = [{ at: 0, kind: "start", text: "Via" }];
+      let phaseStart = 0;
+      sequence.forEach((phase, index) => {
+        for (let second = 5; second >= 1; second -= 1) {
+          const at = phaseStart + phase.seconds - second;
+          if (at > phaseStart) events.push({ at, kind: "countdown", text: COUNTDOWN_WORDS[second] });
+        }
+        phaseStart += phase.seconds;
+        const next = sequence[index + 1];
+        if (next) events.push({ at: phaseStart, kind: next.type, text: phaseAnnouncement(next, phase) });
+      });
+      events.push({ at: phaseStart, kind: "done", text: "Allenamento completato" });
+      return { events, duration: phaseStart + 3 };
+    }
+
+    async function buildWorkoutCueTrack(timer) {
+      const rate = 8000;
+      const level = Math.max(0, Math.min(1, musicState.cueVolume / 100));
+      const { events, duration } = workoutCueEvents(timer);
+      const output = new Uint8Array(Math.ceil(duration * rate));
+      output.fill(128);
+      const clips = new Map();
+      for (const event of events) {
+        const key = `${event.kind}:${event.text}`;
+        if (!clips.has(key)) clips.set(key, await buildMediaCueSamples(event.kind, event.text, level));
+        const clip = clips.get(key);
+        const start = Math.max(0, Math.round(event.at * rate));
+        const outputLength = Math.round(clip.length * rate / 22050);
+        for (let i = 0; i < outputLength && start + i < output.length; i += 1) {
+          const sourceIndex = Math.min(clip.length - 1, Math.floor(i * 22050 / rate));
+          const mixed = (output[start + i] - 128) + Math.round(clip[sourceIndex] / 256);
+          output[start + i] = Math.max(0, Math.min(255, mixed + 128));
+        }
+      }
+      return {
+        key: `${timer.id}:${timer.sets}:${timer.reps}:${timer.work}:${timer.rest}:${timer.setRest}:${musicState.cueVolume}`,
+        url: createPcm8WavUrl(output, rate)
+      };
+    }
+
+    function prepareWorkoutCueTrack(timer = getActiveTimer()) {
+      const key = `${timer.id}:${timer.sets}:${timer.reps}:${timer.work}:${timer.rest}:${timer.setRest}:${musicState.cueVolume}`;
+      if (workoutCueTrack?.key === key) return Promise.resolve(workoutCueTrack);
+      if (workoutCueTrackPromise?.key === key) return workoutCueTrackPromise.promise;
+      const promise = buildWorkoutCueTrack(timer).then((track) => {
+        if (workoutCueTrack?.url) URL.revokeObjectURL(workoutCueTrack.url);
+        workoutCueTrack = track;
+        workoutCueTrackPromise = null;
+        return track;
+      }).catch((error) => {
+        workoutCueTrackPromise = null;
+        console.warn("Traccia audio per schermo bloccato non disponibile.", error);
+        return null;
+      });
+      workoutCueTrackPromise = { key, promise };
+      return promise;
+    }
+
+    function workoutElapsedSeconds() {
+      if (!player.sequence.length) return 0;
+      const completed = player.sequence.slice(0, player.index)
+        .reduce((total, phase) => total + phase.seconds, 0);
+      const current = player.sequence[player.index];
+      const currentElapsed = current ? current.seconds - player.remainingMs / 1000 : 0;
+      return Math.max(0, completed + currentElapsed);
+    }
+
+    async function startWorkoutCueTrack(timer = getActiveTimer()) {
+      const audio = ensureWorkoutCueAudio();
+      const track = await prepareWorkoutCueTrack(timer);
+      if (!track || !player.running) return;
+      const elapsed = workoutElapsedSeconds();
+      if (audio.src !== track.url) {
+        audio.src = track.url;
+        audio.load();
+        if (audio.readyState < 1) {
+          await new Promise((resolve) => {
+            audio.addEventListener("loadedmetadata", resolve, { once: true });
+            window.setTimeout(resolve, 1500);
+          });
+        }
+      }
+      try {
+        audio.currentTime = Math.min(elapsed, Math.max(0, (audio.duration || elapsed + 1) - 0.1));
+      } catch (error) {
+        // Metadata may not be ready yet; playback still starts from the beginning.
+      }
+      audio.play().catch(() => {
+        els.musicStatus.textContent = "Per usare il timer a telefono bloccato, apri il sito in Safari e premi Avvia.";
+      });
+    }
+
+    function stopWorkoutCueTrack(reset = false) {
+      if (!workoutCueAudio) return;
+      workoutCueAudio.pause();
+      if (reset) {
+        try {
+          workoutCueAudio.currentTime = 0;
+        } catch (error) {
+          // Ignore media metadata timing races.
+        }
+      }
     }
 
     function ensureAudioContext() {
@@ -2842,6 +3017,11 @@
 
     function playCue(kind, spokenText = "") {
       if (!els.soundToggle.checked) return;
+      if (IS_IOS_MEDIA && player.started) {
+        els.voiceCueStatus.textContent = spokenText;
+        duckMusic(kind === "countdown" ? 900 : 1800);
+        return;
+      }
       playMediaCue(kind, spokenText);
     }
 
@@ -2885,8 +3065,12 @@
     els.cueVolumeInput.addEventListener("input", () => {
       musicState.cueVolume = clampInt(els.cueVolumeInput.value, 0, 100, 100);
       clearCueUrlCache();
+      workoutCueTrackPromise = null;
       persistMusicState();
       updateVolumeLabels();
+      prepareWorkoutCueTrack(getActiveTimer()).then(() => {
+        if (player.running && IS_IOS_MEDIA) startWorkoutCueTrack(getActiveTimer());
+      });
     });
     els.cueTestBtn.addEventListener("click", () => {
       discardAudioContext();
@@ -2896,7 +3080,7 @@
         cueAudio.load();
       }
       primeCueAudio();
-      playCue("done", "Avviso attivo");
+      playMediaCue("done", "Avviso attivo");
       els.musicStatus.textContent = "Avviso di prova inviato. Se hai appena collegato la cassa, provalo prima di avviare.";
     });
     els.radioPlayer.addEventListener("playing", () => {
