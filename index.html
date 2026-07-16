@@ -2456,6 +2456,9 @@
       els.voiceCueStatus.textContent = text;
       if (!("speechSynthesis" in window)) return;
       try {
+        // After an audio route change (e.g. a Bluetooth speaker connecting),
+        // iOS leaves speechSynthesis stuck in a paused state: resume it first.
+        window.speechSynthesis.resume();
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = "it-IT";
@@ -2468,35 +2471,87 @@
       }
     }
 
+    function discardAudioContext() {
+      if (!audioContext) return;
+      const stale = audioContext;
+      audioContext = null;
+      try {
+        stale.close().catch(() => {});
+      } catch (error) {
+        // ignore: the context is already unusable
+      }
+    }
+
+    function ensureAudioContext() {
+      const AudioContextConstructor = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextConstructor) return null;
+      if (audioContext && audioContext.state === "closed") audioContext = null;
+      if (!audioContext) {
+        try {
+          audioContext = new AudioContextConstructor();
+        } catch (error) {
+          audioContext = null;
+        }
+      }
+      return audioContext;
+    }
+
+    function emitBeep(context, kind) {
+      const cueLevel = Math.max(0, Math.min(1, musicState.cueVolume / 100));
+      if (cueLevel <= 0) return;
+      const now = context.currentTime;
+      const osc = context.createOscillator();
+      const gain = context.createGain();
+      const frequencies = {
+        start: 660,
+        work: 720,
+        repRest: 420,
+        setRest: 520,
+        countdown: 880,
+        skip: 560,
+        done: 760
+      };
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(frequencies[kind] || 620, now);
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime((kind === "countdown" ? 0.24 : 0.18) * cueLevel, now + 0.015);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + (kind === "done" ? 0.34 : 0.14));
+      osc.connect(gain).connect(context.destination);
+      osc.start(now);
+      osc.stop(now + (kind === "done" ? 0.36 : 0.16));
+    }
+
     function playBeep(kind) {
       if (!els.soundToggle.checked) return;
       try {
-        const AudioContextConstructor = window.AudioContext || window.webkitAudioContext;
-        if (!AudioContextConstructor) return;
-        audioContext = audioContext || new AudioContextConstructor();
-        if (audioContext.state === "suspended") audioContext.resume();
-        const now = audioContext.currentTime;
-        const cueLevel = Math.max(0, Math.min(1, musicState.cueVolume / 100));
-        if (cueLevel <= 0) return;
-        const osc = audioContext.createOscillator();
-        const gain = audioContext.createGain();
-        const frequencies = {
-          start: 660,
-          work: 720,
-          repRest: 420,
-          setRest: 520,
-          countdown: 880,
-          skip: 560,
-          done: 760
-        };
-        osc.type = "sine";
-        osc.frequency.setValueAtTime(frequencies[kind] || 620, now);
-        gain.gain.setValueAtTime(0.0001, now);
-        gain.gain.exponentialRampToValueAtTime((kind === "countdown" ? 0.24 : 0.18) * cueLevel, now + 0.015);
-        gain.gain.exponentialRampToValueAtTime(0.0001, now + (kind === "done" ? 0.34 : 0.14));
-        osc.connect(gain).connect(audioContext.destination);
-        osc.start(now);
-        osc.stop(now + (kind === "done" ? 0.36 : 0.16));
+        const context = ensureAudioContext();
+        if (!context) return;
+        if (context.state === "running") {
+          emitBeep(context, kind);
+          return;
+        }
+        // Suspended or "interrupted" (iOS after a Bluetooth route change):
+        // wait for resume() to finish before playing, or the beep is silent.
+        context.resume().then(() => {
+          if (context.state === "running") {
+            emitBeep(context, kind);
+            return;
+          }
+          // The context is stuck on a dead output route: rebuild it.
+          discardAudioContext();
+          const fresh = ensureAudioContext();
+          if (fresh) emitBeep(fresh, kind);
+        }).catch(() => {
+          discardAudioContext();
+          const fresh = ensureAudioContext();
+          if (fresh) {
+            try {
+              emitBeep(fresh, kind);
+            } catch (error) {
+              console.warn("Segnale sonoro non disponibile.", error);
+            }
+          }
+        });
       } catch (error) {
         console.warn("Segnale sonoro non disponibile.", error);
       }
@@ -2617,6 +2672,13 @@
     // so resync on pageshow and window focus as well.
     window.addEventListener("pageshow", resumeFromWake);
     window.addEventListener("focus", resumeFromWake);
+    // When the audio output changes (e.g. a Bluetooth speaker connects or
+    // disconnects), the old AudioContext stays routed to the previous output
+    // and the beeps go silent while the radio keeps playing. Drop it so the
+    // next cue rebuilds a context on the new route.
+    if (navigator.mediaDevices && typeof navigator.mediaDevices.addEventListener === "function") {
+      navigator.mediaDevices.addEventListener("devicechange", discardAudioContext);
+    }
     // Save the position when the page is being hidden or torn down, so leaving
     // the browser (or the OS killing the tab) does not lose the workout.
     window.addEventListener("pagehide", persistRunState);
