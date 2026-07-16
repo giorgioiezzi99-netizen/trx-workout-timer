@@ -1258,6 +1258,9 @@
                   <output id="cueVolumeValue" for="cueVolumeInput">100%</output>
                 </label>
                 <input id="cueVolumeInput" type="range" min="0" max="100" step="1" value="100">
+                <button class="button button-secondary button-compact" id="cueTestBtn" type="button">
+                  Prova avviso
+                </button>
               </div>
             </div>
             <div class="music-player" id="musicPlayerArea" hidden>
@@ -1458,6 +1461,7 @@
       musicVolumeValue: document.getElementById("musicVolumeValue"),
       cueVolumeInput: document.getElementById("cueVolumeInput"),
       cueVolumeValue: document.getElementById("cueVolumeValue"),
+      cueTestBtn: document.getElementById("cueTestBtn"),
       musicStatus: document.getElementById("musicStatus"),
       activeName: document.getElementById("activeName"),
       activeStructure: document.getElementById("activeStructure"),
@@ -1504,6 +1508,7 @@
     let audioContext = null;
     let cueAudio = null;
     const beepUrlCache = new Map();
+    let speechCueTimer = 0;
     let hlsPlayer = null;
     let pendingRadioPlay = false;
     let duckRestoreTimer = 0;
@@ -2466,6 +2471,8 @@
 
     function cancelSpeech() {
       els.voiceCueStatus.textContent = "";
+      window.clearTimeout(speechCueTimer);
+      speechCueTimer = 0;
       if (!("speechSynthesis" in window)) return;
       window.speechSynthesis.cancel();
     }
@@ -2519,10 +2526,13 @@
         done: 760
       };
       const freq = frequencies[kind] || 620;
-      const duration = kind === "done" ? 0.4 : 0.18;
+      const duration = kind === "done" ? 1.05 : (kind === "countdown" ? 0.42 : 0.68);
+      const pulseCount = kind === "done" ? 3 : (kind === "countdown" ? 1 : 2);
+      const pulseLength = kind === "countdown" ? 0.28 : 0.22;
+      const pulseGap = kind === "done" ? 0.13 : 0.12;
       const rate = 22050;
       const sampleCount = Math.floor(rate * duration);
-      const peak = (kind === "countdown" ? 0.85 : 0.7) * level;
+      const peak = (kind === "countdown" ? 0.92 : 0.82) * level;
       const buffer = new ArrayBuffer(44 + sampleCount * 2);
       const view = new DataView(buffer);
       const writeAscii = (offset, text) => {
@@ -2544,9 +2554,16 @@
       const samples = new Int16Array(buffer, 44);
       for (let i = 0; i < sampleCount; i += 1) {
         const t = i / rate;
-        const attack = Math.min(1, t / 0.012);
-        const release = Math.exp(-t * (kind === "done" ? 9 : 16));
-        samples[i] = Math.round(Math.sin(2 * Math.PI * freq * t) * attack * release * peak * 32767);
+        const pulseSpan = pulseLength + pulseGap;
+        const pulseIndex = Math.floor(t / pulseSpan);
+        const pulseTime = t - pulseIndex * pulseSpan;
+        if (pulseIndex >= pulseCount || pulseTime >= pulseLength) {
+          samples[i] = 0;
+          continue;
+        }
+        const attack = Math.min(1, pulseTime / 0.012);
+        const release = Math.min(1, Math.max(0, (pulseLength - pulseTime) / 0.07));
+        samples[i] = Math.round(Math.sin(2 * Math.PI * freq * pulseTime) * attack * release * peak * 32767);
       }
       return URL.createObjectURL(new Blob([buffer], { type: "audio/wav" }));
     }
@@ -2556,6 +2573,7 @@
       cueAudio = document.createElement("audio");
       cueAudio.setAttribute("playsinline", "");
       cueAudio.preload = "auto";
+      cueAudio.volume = 1;
       cueAudio.style.display = "none";
       document.body.appendChild(cueAudio);
       return cueAudio;
@@ -2610,7 +2628,13 @@
         if (!beepUrlCache.has(cacheKey)) {
           beepUrlCache.set(cacheKey, buildBeepWavUrl(kind, level));
         }
-        audio.src = beepUrlCache.get(cacheKey);
+        const nextSource = beepUrlCache.get(cacheKey);
+        if (audio.src !== nextSource) {
+          audio.src = nextSource;
+          audio.load();
+        } else {
+          audio.currentTime = 0;
+        }
         const attempt = audio.play();
         if (attempt && typeof attempt.catch === "function") {
           attempt.catch(() => fallbackBeep(kind));
@@ -2662,7 +2686,17 @@
         duckMusic(kind === "countdown" ? 1100 : 2200);
       }
       playBeep(kind);
-      speakCue(spokenText);
+      if (spokenText) {
+        window.clearTimeout(speechCueTimer);
+        // Let the media beep establish the Bluetooth route before iOS speech
+        // synthesis requests its own audio session. Starting both together can
+        // make both cues disappear while continuous music keeps playing.
+        const speechDelay = kind === "done" ? 1080 : (kind === "countdown" ? 430 : 700);
+        speechCueTimer = window.setTimeout(() => {
+          speechCueTimer = 0;
+          speakCue(spokenText);
+        }, speechDelay);
+      }
     }
 
     els.startPauseBtn.addEventListener("click", toggleStartPause);
@@ -2707,6 +2741,16 @@
       musicState.cueVolume = clampInt(els.cueVolumeInput.value, 0, 100, 100);
       persistMusicState();
       updateVolumeLabels();
+    });
+    els.cueTestBtn.addEventListener("click", () => {
+      discardAudioContext();
+      if (cueAudio) {
+        cueAudio.pause();
+        cueAudio.removeAttribute("src");
+        cueAudio.load();
+      }
+      playCue("done", "Avviso attivo");
+      els.musicStatus.textContent = "Avviso di prova inviato. Se hai appena collegato la cassa, provalo prima di avviare.";
     });
     els.radioPlayer.addEventListener("playing", () => {
       const source = getCurrentMusicSource();
@@ -2779,7 +2823,15 @@
     // and the beeps go silent while the radio keeps playing. Drop it so the
     // next cue rebuilds a context on the new route.
     if (navigator.mediaDevices && typeof navigator.mediaDevices.addEventListener === "function") {
-      navigator.mediaDevices.addEventListener("devicechange", discardAudioContext);
+      navigator.mediaDevices.addEventListener("devicechange", () => {
+        discardAudioContext();
+        if (cueAudio) {
+          cueAudio.pause();
+          cueAudio.removeAttribute("src");
+          cueAudio.load();
+        }
+        els.musicStatus.textContent = "Uscita audio cambiata. Tocca Prova avviso per verificare la cassa.";
+      });
     }
     // Save the position when the page is being hidden or torn down, so leaving
     // the browser (or the OS killing the tab) does not lose the workout.
