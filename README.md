@@ -44,14 +44,11 @@ Calcolo totale:
 - Musica è chiusa di default e offre Senza musica o Radio italiane.
 - Radio italiane include 20 stazioni italiane principali con controlli Radio precedente e Radio successiva.
 - Avviare l'allenamento avvia la radio selezionata; pausa/azzera mettono in pausa o fermano la radio.
-- Volume musica e Volume avvisi hanno slider grandi e visibili.
+- Musica, segnali e voce usano un rapporto fisso e vengono regolati insieme con i tasti fisici del telefono; gli slider interni sono stati rimossi.
 - Segnali e voce sono riprodotti come un unico file audio multimediale, così seguono la stessa uscita Bluetooth della musica.
-- Il volume avvisi viene applicato direttamente ai campioni di segnali e voce, anche sui dispositivi che ignorano il volume degli elementi audio.
-- Su iPhone, quando Safari non permette di regolare il volume della radio dalla pagina, l'interfaccia indica di usare i tasti fisici del telefono.
-- Su iPhone lo slider della musica viene disabilitato esplicitamente, perché iOS non permette alle pagine web di modificare il volume multimediale; il volume avvisi continua invece a regolare i campioni audio generati dall'app.
-- I segnali e i countdown vocali abbassano temporaneamente il volume della musica per la durata reale dell'avviso, poi lo ripristinano esattamente.
-- Su iPhone, dove Safari impedisce l'attenuazione graduale, viene silenziata soltanto la radio durante l'avviso e riattivata automaticamente subito dopo.
-- Per il blocco schermo, l'app prepara una singola traccia multimediale continua con tutti gli avvisi dell'allenamento già posizionati nel tempo. Su iPhone va avviata da Safari prima di bloccare il telefono; i browser interni di WhatsApp e altre app possono comunque interrompere l'audio in background.
+- Su iPhone la radio non viene più silenziata o interrotta durante gli avvisi: musica e voce restano sovrapposte e continue.
+- Sui browser che supportano davvero il controllo del volume multimediale resta disponibile un'attenuazione graduale automatica della radio.
+- Per il blocco schermo, l'app prepara una singola traccia PCM 16-bit / 12 kHz con tutti gli avvisi già posizionati nel tempo. Su iPhone va avviata da Safari prima di bloccare il telefono; i browser interni di WhatsApp e altre app possono comunque interrompere l'audio in background.
 - Durante il timer, l'app richiede il blocco schermo attivo dove supportato dal browser.
 
 ## Fonti audio

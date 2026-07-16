@@ -676,10 +676,9 @@
       line-height: 1.35;
     }
 
-    .volume-panel {
+    .audio-note {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 10px;
+      gap: 12px;
       margin-top: 14px;
       border: 1px solid var(--border);
       border-radius: var(--radius);
@@ -687,36 +686,11 @@
       padding: 12px;
     }
 
-    .volume-control {
-      display: grid;
-      gap: 8px;
-    }
-
-    .volume-control label {
-      display: flex;
-      justify-content: space-between;
-      gap: 10px;
-      color: var(--muted);
-      font-size: 0.86rem;
-      font-weight: 760;
-    }
-
-    .volume-control output {
-      color: var(--text);
-      font-variant-numeric: tabular-nums;
-    }
-
-    .volume-hint {
-      min-height: 2.5em;
+    .audio-note p {
       margin: 0;
       color: var(--muted);
-      font-size: 0.76rem;
-      line-height: 1.3;
-    }
-
-    .volume-control input {
-      width: 100%;
-      accent-color: var(--green);
+      font-size: 0.86rem;
+      line-height: 1.45;
     }
 
     .music-player {
@@ -916,10 +890,6 @@
       .preset-actions,
       .music-controls {
         grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-
-      .volume-panel {
-        grid-template-columns: 1fr;
       }
 
       .timer-body {
@@ -1252,26 +1222,14 @@
                 Ferma musica
               </button>
             </div>
-            <div class="volume-panel" aria-label="Controlli volume audio">
-              <div class="volume-control">
-                <label for="musicVolumeInput">
-                  <span>Volume musica</span>
-                  <output id="musicVolumeValue" for="musicVolumeInput">80%</output>
-                </label>
-                <input id="musicVolumeInput" type="range" min="0" max="100" step="1" value="80">
-                <p class="volume-hint" id="musicVolumeHint">Regola il volume della radio.</p>
-              </div>
-              <div class="volume-control">
-                <label for="cueVolumeInput">
-                  <span>Volume avvisi</span>
-                  <output id="cueVolumeValue" for="cueVolumeInput">100%</output>
-                </label>
-                <input id="cueVolumeInput" type="range" min="0" max="100" step="1" value="100">
-                <p class="volume-hint" id="cueVolumeHint">Regola insieme segnali e voce.</p>
-                <button class="button button-secondary button-compact" id="cueTestBtn" type="button">
-                  Prova avviso
-                </button>
-              </div>
+            <div class="audio-note" aria-label="Volume audio">
+              <p>
+                Usa i tasti del volume del telefono: musica, segnali e voce aumentano o diminuiscono insieme.
+                Su iPhone la musica continua senza interruzioni durante gli avvisi.
+              </p>
+              <button class="button button-secondary button-compact" id="cueTestBtn" type="button">
+                Prova avviso
+              </button>
             </div>
             <div class="status-line" id="lockScreenHint">
               Per gli avvisi a telefono bloccato, apri questa pagina in Safari e premi Avvia prima di bloccare lo schermo.
@@ -1399,6 +1357,8 @@
     const MUSIC_STORAGE_KEY = "trx-tabata-music-v1";
     const RUN_STORAGE_KEY = "trx-tabata-run-v1";
     const RUN_STATE_MAX_AGE_MS = 6 * 60 * 60 * 1000;
+    const RADIO_MEDIA_LEVEL = 0.82;
+    const CUE_MEDIA_LEVEL = 0.92;
     const DEFAULT_TIMER = {
       id: "trx-workout-default",
       name: "Allenamento TRX",
@@ -1470,12 +1430,6 @@
       musicStopBtn: document.getElementById("musicStopBtn"),
       musicPlayerArea: document.getElementById("musicPlayerArea"),
       radioPlayer: document.getElementById("radioPlayer"),
-      musicVolumeInput: document.getElementById("musicVolumeInput"),
-      musicVolumeValue: document.getElementById("musicVolumeValue"),
-      musicVolumeHint: document.getElementById("musicVolumeHint"),
-      cueVolumeInput: document.getElementById("cueVolumeInput"),
-      cueVolumeValue: document.getElementById("cueVolumeValue"),
-      cueVolumeHint: document.getElementById("cueVolumeHint"),
       cueTestBtn: document.getElementById("cueTestBtn"),
       musicStatus: document.getElementById("musicStatus"),
       activeName: document.getElementById("activeName"),
@@ -1589,7 +1543,7 @@
     }
 
     function loadMusicState() {
-      const fallback = { mode: "radio", radioIndex: 0, musicVolume: 80, cueVolume: 100 };
+      const fallback = { mode: "radio", radioIndex: 0 };
       try {
         const saved = localStorage.getItem(MUSIC_STORAGE_KEY);
         if (!saved) return fallback;
@@ -1610,9 +1564,7 @@
           const savedMode = parsed.mode === "none" ? "none" : "radio";
           return {
             mode: savedMode,
-            radioIndex: clampInt(parsed.radioIndex, 0, RADIO_STATIONS.length - 1, 0),
-            musicVolume: clampInt(parsed.musicVolume, 0, 100, fallback.musicVolume),
-            cueVolume: clampInt(parsed.cueVolume, 0, 100, fallback.cueVolume)
+            radioIndex: clampInt(parsed.radioIndex, 0, RADIO_STATIONS.length - 1, 0)
           };
         }
       } catch (error) {
@@ -1643,7 +1595,7 @@
 
     let musicVolumeUnsupported = false;
 
-    function setMediaVolume(percent = musicState.musicVolume) {
+    function setMediaVolume(percent = RADIO_MEDIA_LEVEL * 100) {
       const value = Number(percent);
       const level = Number.isFinite(value) ? Math.max(0, Math.min(1, value / 100)) : 0.8;
       if (IS_IOS_MEDIA) {
@@ -1666,33 +1618,21 @@
       if (!duckState) return;
       const state = duckState;
       duckState = null;
-      if (state.usedMute) {
-        els.radioPlayer.muted = state.wasMuted;
-      } else {
-        setMediaVolume(state.baseVolume);
-      }
+      setMediaVolume(state.baseVolume);
     }
 
     function duckMusic(duration = 2400) {
-      if (musicState.mode === "none" || els.radioPlayer.paused) return;
-      const baseVolume = clampInt(musicState.musicVolume, 0, 100, 80);
+      if (IS_IOS_MEDIA || musicVolumeUnsupported || musicState.mode === "none" || els.radioPlayer.paused) return;
+      const baseVolume = Math.round(RADIO_MEDIA_LEVEL * 100);
       window.clearTimeout(duckRestoreTimer);
       if (!duckState) {
         duckState = {
           baseVolume,
-          wasMuted: els.radioPlayer.muted,
-          usedMute: musicVolumeUnsupported
+          wasMuted: els.radioPlayer.muted
         };
       }
-      if (musicVolumeUnsupported) {
-        duckState.usedMute = true;
-        els.radioPlayer.muted = true;
-      } else if (baseVolume > 0) {
+      if (baseVolume > 0) {
         setMediaVolume(Math.max(3, Math.round(baseVolume * 0.18)));
-        if (musicVolumeUnsupported) {
-          duckState.usedMute = true;
-          els.radioPlayer.muted = true;
-        }
       }
       // The ended event normally restores the music. This is a safety net for
       // browsers that fail to emit it after an audio-route interruption.
@@ -1700,16 +1640,8 @@
     }
 
     function updateVolumeLabels() {
-      els.musicVolumeInput.value = String(musicState.musicVolume);
-      els.musicVolumeValue.value = `${musicState.musicVolume}%`;
-      els.musicVolumeValue.textContent = `${musicState.musicVolume}%`;
-      els.musicVolumeHint.textContent = musicVolumeUnsupported
-        ? "Su iPhone usa i tasti fisici: iOS non permette al sito di cambiare il volume."
-        : "Regola il volume della radio.";
-      els.cueVolumeInput.value = String(musicState.cueVolume);
-      els.cueVolumeValue.value = `${musicState.cueVolume}%`;
-      els.cueVolumeValue.textContent = `${musicState.cueVolume}%`;
-      els.cueVolumeHint.textContent = "Regola segnali e voce; la musica si abbassa durante gli avvisi.";
+      // Volume is intentionally controlled only by the device hardware keys,
+      // so radio and alerts always change together.
     }
 
     async function requestScreenWakeLock() {
@@ -2054,7 +1986,7 @@
       }
       requestScreenWakeLock();
       startSelectedMusic();
-      startWorkoutCueTrack(getActiveTimer());
+      if (IS_IOS_MEDIA) startWorkoutCueTrack(getActiveTimer());
       playCue("start", "Via");
       startTicking();
       renderAll();
@@ -2435,7 +2367,6 @@
       els.musicPrevBtn.disabled = !isRadio;
       els.musicSkipBtn.disabled = !isRadio;
       els.musicStopBtn.disabled = !isRadio;
-      els.musicVolumeInput.disabled = !isRadio || musicVolumeUnsupported;
       els.currentMusicSource.hidden = !isRadio;
       if (isRadio && source) {
         els.musicSourceTitle.textContent = source.title;
@@ -2761,29 +2692,6 @@
       if (attempt && typeof attempt.catch === "function") attempt.catch(() => {});
     }
 
-    function createPcm8WavUrl(samples, rate = 8000) {
-      const buffer = new ArrayBuffer(44 + samples.length);
-      const view = new DataView(buffer);
-      const writeAscii = (offset, text) => {
-        for (let i = 0; i < text.length; i += 1) view.setUint8(offset + i, text.charCodeAt(i));
-      };
-      writeAscii(0, "RIFF");
-      view.setUint32(4, 36 + samples.length, true);
-      writeAscii(8, "WAVE");
-      writeAscii(12, "fmt ");
-      view.setUint32(16, 16, true);
-      view.setUint16(20, 1, true);
-      view.setUint16(22, 1, true);
-      view.setUint32(24, rate, true);
-      view.setUint32(28, rate, true);
-      view.setUint16(32, 1, true);
-      view.setUint16(34, 8, true);
-      writeAscii(36, "data");
-      view.setUint32(40, samples.length, true);
-      new Uint8Array(buffer, 44).set(samples);
-      return URL.createObjectURL(new Blob([buffer], { type: "audio/wav" }));
-    }
-
     function ensureWorkoutCueAudio() {
       if (workoutCueAudio) return workoutCueAudio;
       workoutCueAudio = document.createElement("audio");
@@ -2821,11 +2729,10 @@
     }
 
     async function buildWorkoutCueTrack(timer) {
-      const rate = 8000;
-      const level = Math.max(0, Math.min(1, musicState.cueVolume / 100));
+      const rate = 12000;
+      const level = CUE_MEDIA_LEVEL;
       const { events, duration } = workoutCueEvents(timer);
-      const output = new Uint8Array(Math.ceil(duration * rate));
-      output.fill(128);
+      const output = new Int16Array(Math.ceil(duration * rate));
       const clips = new Map();
       for (const event of events) {
         const key = `${event.kind}:${event.text}`;
@@ -2835,18 +2742,18 @@
         const outputLength = Math.round(clip.length * rate / 22050);
         for (let i = 0; i < outputLength && start + i < output.length; i += 1) {
           const sourceIndex = Math.min(clip.length - 1, Math.floor(i * 22050 / rate));
-          const mixed = (output[start + i] - 128) + Math.round(clip[sourceIndex] / 256);
-          output[start + i] = Math.max(0, Math.min(255, mixed + 128));
+          const mixed = output[start + i] + clip[sourceIndex];
+          output[start + i] = Math.max(-32768, Math.min(32767, mixed));
         }
       }
       return {
-        key: `${timer.id}:${timer.sets}:${timer.reps}:${timer.work}:${timer.rest}:${timer.setRest}:${musicState.cueVolume}`,
-        url: createPcm8WavUrl(output, rate)
+        key: `${timer.id}:${timer.sets}:${timer.reps}:${timer.work}:${timer.rest}:${timer.setRest}`,
+        url: createWavUrl(output, rate)
       };
     }
 
     function prepareWorkoutCueTrack(timer = getActiveTimer()) {
-      const key = `${timer.id}:${timer.sets}:${timer.reps}:${timer.work}:${timer.rest}:${timer.setRest}:${musicState.cueVolume}`;
+      const key = `${timer.id}:${timer.sets}:${timer.reps}:${timer.work}:${timer.rest}:${timer.setRest}`;
       if (workoutCueTrack?.key === key) return Promise.resolve(workoutCueTrack);
       if (workoutCueTrackPromise?.key === key) return workoutCueTrackPromise.promise;
       const promise = buildWorkoutCueTrack(timer).then((track) => {
@@ -2924,7 +2831,7 @@
     }
 
     function emitBeep(context, kind) {
-      const cueLevel = Math.max(0, Math.min(1, musicState.cueVolume / 100));
+      const cueLevel = CUE_MEDIA_LEVEL;
       if (cueLevel <= 0) return;
       const now = context.currentTime;
       const osc = context.createOscillator();
@@ -2950,7 +2857,7 @@
 
     async function playMediaCue(kind, spokenText) {
       if (!els.soundToggle.checked) return;
-      const level = Math.max(0, Math.min(1, musicState.cueVolume / 100));
+      const level = CUE_MEDIA_LEVEL;
       if (level <= 0) return;
       const requestId = ++cueRequestId;
       els.voiceCueStatus.textContent = spokenText;
@@ -3019,7 +2926,6 @@
       if (!els.soundToggle.checked) return;
       if (IS_IOS_MEDIA && player.started) {
         els.voiceCueStatus.textContent = spokenText;
-        duckMusic(kind === "countdown" ? 900 : 1800);
         return;
       }
       playMediaCue(kind, spokenText);
@@ -3052,26 +2958,6 @@
     els.musicPrevBtn.addEventListener("click", () => changeMusicSource(-1));
     els.musicSkipBtn.addEventListener("click", () => changeMusicSource(1));
     els.musicStopBtn.addEventListener("click", () => stopMusic());
-    els.musicVolumeInput.addEventListener("input", () => {
-      restoreMusicAfterCue();
-      musicState.musicVolume = clampInt(els.musicVolumeInput.value, 0, 100, 80);
-      persistMusicState();
-      setMediaVolume();
-      updateVolumeLabels();
-      if (musicVolumeUnsupported) {
-        els.musicStatus.textContent = "Su questo telefono il volume della musica si regola solo con i tasti fisici del volume.";
-      }
-    });
-    els.cueVolumeInput.addEventListener("input", () => {
-      musicState.cueVolume = clampInt(els.cueVolumeInput.value, 0, 100, 100);
-      clearCueUrlCache();
-      workoutCueTrackPromise = null;
-      persistMusicState();
-      updateVolumeLabels();
-      prepareWorkoutCueTrack(getActiveTimer()).then(() => {
-        if (player.running && IS_IOS_MEDIA) startWorkoutCueTrack(getActiveTimer());
-      });
-    });
     els.cueTestBtn.addEventListener("click", () => {
       discardAudioContext();
       if (cueAudio) {
