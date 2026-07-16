@@ -1502,6 +1502,7 @@
     let editorOpen = false;
     let musicState = loadMusicState();
     let audioContext = null;
+    let cueOutput = null;
     let hlsPlayer = null;
     let pendingRadioPlay = false;
     let duckRestoreTimer = 0;
@@ -1966,6 +1967,13 @@
       player.phaseEndAt = Date.now() + player.remainingMs;
       persistRunState();
       lastCountdownSecond = null;
+      // Prime the cue output inside the user gesture, so the hidden <audio>
+      // element carrying the beeps is allowed to play.
+      const cueContext = ensureAudioContext();
+      if (cueContext) {
+        if (cueContext.state !== "running") cueContext.resume().catch(() => {});
+        ensureCueOutput(cueContext);
+      }
       requestScreenWakeLock();
       startSelectedMusic();
       playCue("start", "Via");
@@ -2472,6 +2480,10 @@
     }
 
     function discardAudioContext() {
+      if (cueOutput) {
+        cueOutput.dest = null;
+        cueOutput.context = null;
+      }
       if (!audioContext) return;
       const stale = audioContext;
       audioContext = null;
@@ -2479,6 +2491,33 @@
         stale.close().catch(() => {});
       } catch (error) {
         // ignore: the context is already unusable
+      }
+    }
+
+    // Beeps are routed through a hidden <audio> element instead of the raw
+    // AudioContext output: media elements follow the system's media route
+    // (e.g. a Bluetooth speaker), while the raw WebAudio output can stay on
+    // the phone speaker. This keeps cues and music on the same output.
+    function ensureCueOutput(context) {
+      try {
+        if (!cueOutput) {
+          const audio = document.createElement("audio");
+          audio.setAttribute("playsinline", "");
+          audio.style.display = "none";
+          document.body.appendChild(audio);
+          cueOutput = { audio, context: null, dest: null };
+        }
+        if (cueOutput.context !== context || !cueOutput.dest) {
+          cueOutput.dest = context.createMediaStreamDestination();
+          cueOutput.context = context;
+          cueOutput.audio.srcObject = cueOutput.dest.stream;
+        }
+        if (cueOutput.audio.paused) {
+          cueOutput.audio.play().catch(() => {});
+        }
+        return cueOutput;
+      } catch (error) {
+        return null;
       }
     }
 
@@ -2516,7 +2555,9 @@
       gain.gain.setValueAtTime(0.0001, now);
       gain.gain.exponentialRampToValueAtTime((kind === "countdown" ? 0.24 : 0.18) * cueLevel, now + 0.015);
       gain.gain.exponentialRampToValueAtTime(0.0001, now + (kind === "done" ? 0.34 : 0.14));
-      osc.connect(gain).connect(context.destination);
+      const out = ensureCueOutput(context);
+      const sink = out && out.dest && !out.audio.paused ? out.dest : context.destination;
+      osc.connect(gain).connect(sink);
       osc.start(now);
       osc.stop(now + (kind === "done" ? 0.36 : 0.16));
     }
