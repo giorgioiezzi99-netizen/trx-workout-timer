@@ -1502,7 +1502,8 @@
     let editorOpen = false;
     let musicState = loadMusicState();
     let audioContext = null;
-    let cueOutput = null;
+    let cueAudio = null;
+    const beepUrlCache = new Map();
     let hlsPlayer = null;
     let pendingRadioPlay = false;
     let duckRestoreTimer = 0;
@@ -1611,10 +1612,19 @@
       return RADIO_STATIONS[musicState.radioIndex] || RADIO_STATIONS[0];
     }
 
+    let musicVolumeUnsupported = false;
+
     function setMediaVolume(percent = musicState.musicVolume) {
       const value = Number(percent);
       const level = Number.isFinite(value) ? Math.max(0, Math.min(1, value / 100)) : 0.8;
-      els.radioPlayer.volume = level;
+      try {
+        els.radioPlayer.volume = level;
+        // iOS ignores element volume (the getter snaps back): detect it so we
+        // can tell the user instead of showing a slider that does nothing.
+        musicVolumeUnsupported = Math.abs(els.radioPlayer.volume - level) > 0.05;
+      } catch (error) {
+        musicVolumeUnsupported = true;
+      }
     }
 
     function duckMusic(duration = 1800) {
@@ -1967,12 +1977,13 @@
       player.phaseEndAt = Date.now() + player.remainingMs;
       persistRunState();
       lastCountdownSecond = null;
-      // Prime the cue output inside the user gesture, so the hidden <audio>
-      // element carrying the beeps is allowed to play.
+      // Create the cue <audio> element inside the user gesture: the first
+      // playCue below runs in the same tap, which unlocks it for the rest of
+      // the workout. Also warm up the WebAudio fallback.
+      ensureCueAudio();
       const cueContext = ensureAudioContext();
-      if (cueContext) {
-        if (cueContext.state !== "running") cueContext.resume().catch(() => {});
-        ensureCueOutput(cueContext);
+      if (cueContext && cueContext.state !== "running") {
+        cueContext.resume().catch(() => {});
       }
       requestScreenWakeLock();
       startSelectedMusic();
@@ -2480,10 +2491,6 @@
     }
 
     function discardAudioContext() {
-      if (cueOutput) {
-        cueOutput.dest = null;
-        cueOutput.context = null;
-      }
       if (!audioContext) return;
       const stale = audioContext;
       audioContext = null;
@@ -2494,31 +2501,64 @@
       }
     }
 
-    // Beeps are routed through a hidden <audio> element instead of the raw
-    // AudioContext output: media elements follow the system's media route
-    // (e.g. a Bluetooth speaker), while the raw WebAudio output can stay on
-    // the phone speaker. This keeps cues and music on the same output.
-    function ensureCueOutput(context) {
-      try {
-        if (!cueOutput) {
-          const audio = document.createElement("audio");
-          audio.setAttribute("playsinline", "");
-          audio.style.display = "none";
-          document.body.appendChild(audio);
-          cueOutput = { audio, context: null, dest: null };
-        }
-        if (cueOutput.context !== context || !cueOutput.dest) {
-          cueOutput.dest = context.createMediaStreamDestination();
-          cueOutput.context = context;
-          cueOutput.audio.srcObject = cueOutput.dest.stream;
-        }
-        if (cueOutput.audio.paused) {
-          cueOutput.audio.play().catch(() => {});
-        }
-        return cueOutput;
-      } catch (error) {
-        return null;
+    // Beeps are synthesized as real WAV files and played through a normal
+    // <audio> element: that is the same audio class as the radio, so the
+    // system routes them to the same output (e.g. a Bluetooth speaker),
+    // unlike raw WebAudio or MediaStream playback which some phones keep on
+    // the phone speaker. The cue volume is baked into the WAV samples, so
+    // the "Volume avvisi" slider works even where element volume is
+    // read-only (iOS).
+    function buildBeepWavUrl(kind, level) {
+      const frequencies = {
+        start: 660,
+        work: 720,
+        repRest: 420,
+        setRest: 520,
+        countdown: 880,
+        skip: 560,
+        done: 760
+      };
+      const freq = frequencies[kind] || 620;
+      const duration = kind === "done" ? 0.4 : 0.18;
+      const rate = 22050;
+      const sampleCount = Math.floor(rate * duration);
+      const peak = (kind === "countdown" ? 0.85 : 0.7) * level;
+      const buffer = new ArrayBuffer(44 + sampleCount * 2);
+      const view = new DataView(buffer);
+      const writeAscii = (offset, text) => {
+        for (let i = 0; i < text.length; i += 1) view.setUint8(offset + i, text.charCodeAt(i));
+      };
+      writeAscii(0, "RIFF");
+      view.setUint32(4, 36 + sampleCount * 2, true);
+      writeAscii(8, "WAVE");
+      writeAscii(12, "fmt ");
+      view.setUint32(16, 16, true);
+      view.setUint16(20, 1, true);
+      view.setUint16(22, 1, true);
+      view.setUint32(24, rate, true);
+      view.setUint32(28, rate * 2, true);
+      view.setUint16(32, 2, true);
+      view.setUint16(34, 16, true);
+      writeAscii(36, "data");
+      view.setUint32(40, sampleCount * 2, true);
+      const samples = new Int16Array(buffer, 44);
+      for (let i = 0; i < sampleCount; i += 1) {
+        const t = i / rate;
+        const attack = Math.min(1, t / 0.012);
+        const release = Math.exp(-t * (kind === "done" ? 9 : 16));
+        samples[i] = Math.round(Math.sin(2 * Math.PI * freq * t) * attack * release * peak * 32767);
       }
+      return URL.createObjectURL(new Blob([buffer], { type: "audio/wav" }));
+    }
+
+    function ensureCueAudio() {
+      if (cueAudio) return cueAudio;
+      cueAudio = document.createElement("audio");
+      cueAudio.setAttribute("playsinline", "");
+      cueAudio.preload = "auto";
+      cueAudio.style.display = "none";
+      document.body.appendChild(cueAudio);
+      return cueAudio;
     }
 
     function ensureAudioContext() {
@@ -2555,14 +2595,32 @@
       gain.gain.setValueAtTime(0.0001, now);
       gain.gain.exponentialRampToValueAtTime((kind === "countdown" ? 0.24 : 0.18) * cueLevel, now + 0.015);
       gain.gain.exponentialRampToValueAtTime(0.0001, now + (kind === "done" ? 0.34 : 0.14));
-      const out = ensureCueOutput(context);
-      const sink = out && out.dest && !out.audio.paused ? out.dest : context.destination;
-      osc.connect(gain).connect(sink);
+      osc.connect(gain).connect(context.destination);
       osc.start(now);
       osc.stop(now + (kind === "done" ? 0.36 : 0.16));
     }
 
     function playBeep(kind) {
+      if (!els.soundToggle.checked) return;
+      const level = Math.max(0, Math.min(1, musicState.cueVolume / 100));
+      if (level <= 0) return;
+      try {
+        const audio = ensureCueAudio();
+        const cacheKey = `${kind}:${Math.round(level * 20)}`;
+        if (!beepUrlCache.has(cacheKey)) {
+          beepUrlCache.set(cacheKey, buildBeepWavUrl(kind, level));
+        }
+        audio.src = beepUrlCache.get(cacheKey);
+        const attempt = audio.play();
+        if (attempt && typeof attempt.catch === "function") {
+          attempt.catch(() => fallbackBeep(kind));
+        }
+      } catch (error) {
+        fallbackBeep(kind);
+      }
+    }
+
+    function fallbackBeep(kind) {
       if (!els.soundToggle.checked) return;
       try {
         const context = ensureAudioContext();
@@ -2641,6 +2699,9 @@
       persistMusicState();
       setMediaVolume();
       updateVolumeLabels();
+      if (musicVolumeUnsupported) {
+        els.musicStatus.textContent = "Su questo telefono il volume della musica si regola solo con i tasti fisici del volume.";
+      }
     });
     els.cueVolumeInput.addEventListener("input", () => {
       musicState.cueVolume = clampInt(els.cueVolumeInput.value, 0, 100, 100);
