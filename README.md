@@ -48,7 +48,8 @@ Calcolo totale:
 - Segnali e voce sono riprodotti come un unico file audio multimediale, così seguono la stessa uscita Bluetooth della musica.
 - Il volume avvisi viene applicato direttamente ai campioni di segnali e voce, anche sui dispositivi che ignorano il volume degli elementi audio.
 - Su iPhone, quando Safari non permette di regolare il volume della radio dalla pagina, l'interfaccia indica di usare i tasti fisici del telefono.
-- I segnali e i countdown vocali abbassano temporaneamente il volume della musica dove il browser permette di regolarlo, poi lo ripristinano.
+- I segnali e i countdown vocali abbassano temporaneamente il volume della musica per la durata reale dell'avviso, poi lo ripristinano esattamente.
+- Su iPhone, dove Safari impedisce l'attenuazione graduale, viene silenziata soltanto la radio durante l'avviso e riattivata automaticamente subito dopo.
 - Durante il timer, l'app richiede il blocco schermo attivo dove supportato dal browser.
 
 ## Fonti audio
