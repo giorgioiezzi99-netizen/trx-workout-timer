@@ -1,0 +1,19 @@
+{
+  "name": "SetTempo",
+  "short_name": "SetTempo",
+  "description": "Timer intervalli con voce italiana, musica e allenamenti personalizzati.",
+  "start_url": "/app/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#070a09",
+  "theme_color": "#070a09",
+  "lang": "it",
+  "icons": [
+    {
+      "src": "/assets/settempo-logo-dark.png",
+      "sizes": "1254x1254",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
